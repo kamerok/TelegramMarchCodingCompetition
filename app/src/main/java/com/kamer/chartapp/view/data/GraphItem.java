@@ -1,5 +1,8 @@
 package com.kamer.chartapp.view.data;
 
+/**
+ * Percent position relative to complete graph
+ */
 public class GraphItem {
 
     private float x;
