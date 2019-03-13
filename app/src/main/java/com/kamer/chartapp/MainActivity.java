@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onPanClick(View view) {
-
+        chartView.pan();
     }
 
     public void onZoomYClick(View view) {

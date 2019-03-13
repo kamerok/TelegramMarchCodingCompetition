@@ -27,6 +27,7 @@ public class ChartView extends View {
     private List<InputItem> cachedInputItems;
     private boolean zoomY;
     private boolean zoomX;
+    private int panOffset;
 
     public ChartView(Context context) {
         super(context);
@@ -78,6 +79,24 @@ public class ChartView extends View {
         invalidate();
     }
 
+    public void pan() {
+        switch (panOffset) {
+            case 0:
+                panOffset = 1;
+                break;
+            case 1:
+                panOffset = 2;
+                break;
+            case 2:
+                panOffset = -1;
+                break;
+            default:
+                panOffset = 0;
+        }
+        calculateDrawData(cachedInputItems);
+        invalidate();
+    }
+
     private void init() {
         paint = new Paint();
         paint.setColor(Color.RED);
@@ -88,7 +107,21 @@ public class ChartView extends View {
     private void calculateDrawData(List<InputItem> data1) {
         List<InputItem> data = new ArrayList<>();
         if (zoomX) {
-            for (int i = (data1.size() / 2); i < data1.size(); i++) {
+            int size = data1.size() / 2;
+            int start;
+            switch (panOffset) {
+                case 0:
+                    start = 1;
+                    break;
+                case 2:
+                    start = size / 2;
+                    break;
+                case 1:
+                default:
+                    start = size / 4;
+            }
+            int end = start + size;
+            for (int i = start; i < end; i++) {
                 data.add(data1.get(i));
             }
         } else {
