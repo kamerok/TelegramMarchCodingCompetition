@@ -24,8 +24,9 @@ public class ChartView extends View {
     private List<DrawItem> drawItems;
 
     //for tests
-    private boolean zoomY;
     private List<InputItem> cachedInputItems;
+    private boolean zoomY;
+    private boolean zoomX;
 
     public ChartView(Context context) {
         super(context);
@@ -65,6 +66,12 @@ public class ChartView extends View {
         invalidate();
     }
 
+    public void switchZoomX() {
+        zoomX = !zoomX;
+        calculateDrawData(cachedInputItems);
+        invalidate();
+    }
+
     public void switchZoomY() {
         zoomY = !zoomY;
         calculateDrawData(cachedInputItems);
@@ -78,7 +85,15 @@ public class ChartView extends View {
         paint.setAntiAlias(true);
     }
 
-    private void calculateDrawData(List<InputItem> data) {
+    private void calculateDrawData(List<InputItem> data1) {
+        List<InputItem> data = new ArrayList<>();
+        if (zoomX) {
+            for (int i = (data1.size() / 2); i < data1.size(); i++) {
+                data.add(data1.get(i));
+            }
+        } else {
+            data.addAll(data1);
+        }
         List<DrawItem> drawData = new ArrayList<>();
         long verticalMin = data.get(0).getValue();
         long verticalMax = data.get(0).getValue();

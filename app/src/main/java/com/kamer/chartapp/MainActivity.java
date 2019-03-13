@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onZoomXClick(View view) {
-
+        chartView.switchZoomX();
     }
 
     public void onPanClick(View view) {
