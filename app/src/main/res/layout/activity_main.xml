@@ -1,14 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:orientation="vertical"
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText">
 
     <com.kamer.chartapp.view.ChartView
         android:id="@+id/view_chart"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:background="@android:color/background_light"/>
+        android:layout_marginTop="8dp"
+        android:background="@android:color/background_light" />
 
-</FrameLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/view_reload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onReloadClick"
+            android:text="reload" />
+
+        <Button
+            android:id="@+id/view_zoom_x"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onZoomXClick"
+            android:text="zoom_x" />
+
+        <Button
+            android:id="@+id/view_zoom_y"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onZoomYClick"
+            android:text="zoom_Y" />
+
+        <Button
+            android:id="@+id/view_pan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onPanClick"
+            android:text="pan" />
+
+    </LinearLayout>
+
+</LinearLayout>

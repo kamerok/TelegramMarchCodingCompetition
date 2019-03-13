@@ -3,6 +3,7 @@ package com.kamer.chartapp;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.format.DateUtils;
+import android.view.View;
 
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.data.InputItem;
@@ -27,18 +28,39 @@ public class MainActivity extends AppCompatActivity {
         chartView.post(new Runnable() {
             @Override
             public void run() {
-                chartView.setData(createData());
+                reloadData();
             }
         });
     }
 
     private List<InputItem> createData() {
         List<InputItem> result = new ArrayList<>();
-        for (int i = 0; i < 7; i++) {
+        int length = 25;
+        for (int i = 0; i < length; i++) {
             long timestamp = System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS * i;
-            long value = random.nextInt(7);
+            long value = random.nextInt(50);
             result.add(new InputItem(timestamp, value));
         }
         return result;
+    }
+
+    private void reloadData() {
+        chartView.setData(createData());
+    }
+
+    public void onReloadClick(View view) {
+        reloadData();
+    }
+
+    public void onZoomXClick(View view) {
+
+    }
+
+    public void onPanClick(View view) {
+
+    }
+
+    public void onZoomYClick(View view) {
+        chartView.switchZoomY();
     }
 }

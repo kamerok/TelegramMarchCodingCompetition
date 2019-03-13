@@ -23,6 +23,10 @@ public class ChartView extends View {
     private Paint paint;
     private List<DrawItem> drawItems;
 
+    //for tests
+    private boolean zoomY;
+    private List<InputItem> cachedInputItems;
+
     public ChartView(Context context) {
         super(context);
         init();
@@ -56,6 +60,25 @@ public class ChartView extends View {
     }
 
     public void setData(List<InputItem> data) {
+        cachedInputItems = data;
+        calculateDrawData(data);
+        invalidate();
+    }
+
+    public void switchZoomY() {
+        zoomY = !zoomY;
+        calculateDrawData(cachedInputItems);
+        invalidate();
+    }
+
+    private void init() {
+        paint = new Paint();
+        paint.setColor(Color.RED);
+        paint.setStrokeWidth(10);
+        paint.setAntiAlias(true);
+    }
+
+    private void calculateDrawData(List<InputItem> data) {
         List<DrawItem> drawData = new ArrayList<>();
         long verticalMin = data.get(0).getValue();
         long verticalMax = data.get(0).getValue();
@@ -67,7 +90,12 @@ public class ChartView extends View {
                 verticalMin = value;
             }
         }
-        long verticalLength = verticalMax - verticalMin;
+        long verticalLength = Math.abs(verticalMax - verticalMin);
+        if (zoomY) {
+            verticalMin -= verticalLength / 2;
+            verticalMax += verticalLength / 2;
+            verticalLength = Math.abs(verticalMax - verticalMin);
+        }
         int xInterval = getWidth() / (data.size() - 1);
         for (int i = 1; i < data.size(); i++) {
             InputItem start = data.get(i - 1);
@@ -75,18 +103,10 @@ public class ChartView extends View {
             int startX = xInterval * (i - 1);
             int startY = (int) ((start.getValue() - verticalMin) / (float) verticalLength * getHeight());
             int stopX = xInterval * i;
-            int stopY =  (int) ((end.getValue() - verticalMin) / (float) verticalLength * getHeight());
+            int stopY = (int) ((end.getValue() - verticalMin) / (float) verticalLength * getHeight());
             drawData.add(new DrawItem(startX, startY, stopX, stopY));
         }
         drawItems = drawData;
-        Log.i("tag", "convert: " + data + "\n" + drawData);
-        invalidate();
-    }
-
-    private void init() {
-        paint = new Paint();
-        paint.setColor(Color.RED);
-        paint.setStrokeWidth(10);
-        paint.setAntiAlias(true);
+        Log.i("tag", "calculate: " + data + "\n" + drawData);
     }
 }
