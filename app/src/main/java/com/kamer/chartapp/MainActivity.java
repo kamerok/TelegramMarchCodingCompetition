@@ -52,15 +52,19 @@ public class MainActivity extends AppCompatActivity {
         reloadData();
     }
 
-    public void onZoomXClick(View view) {
-        chartView.switchZoomX();
+    public void onIncreaseZoomClick(View view) {
+        chartView.setZoom(chartView.getZoom() + 0.1f);
     }
 
-    public void onPanClick(View view) {
-        chartView.pan();
+    public void onDecreaseZoomClick(View view) {
+        chartView.setZoom(chartView.getZoom() - 0.1f);
     }
 
-    public void onZoomYClick(View view) {
-        chartView.switchZoomY();
+    public void onIncreasePanClick(View view) {
+        chartView.setPan(chartView.getPan() + 0.1f);
+    }
+
+    public void onDecreasePanClick(View view) {
+        chartView.setPan(chartView.getPan() - 0.1f);
     }
 }

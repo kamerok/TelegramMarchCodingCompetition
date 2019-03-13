@@ -6,12 +6,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
+import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 import com.kamer.chartapp.view.data.DrawItem;
+import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.InputItem;
 
 import java.util.ArrayList;
@@ -21,13 +22,11 @@ import java.util.List;
 public class ChartView extends View {
 
     private Paint paint;
+    private List<GraphItem> graphItems;
     private List<DrawItem> drawItems;
 
-    //for tests
-    private List<InputItem> cachedInputItems;
-    private boolean zoomY;
-    private boolean zoomX;
-    private int panOffset;
+    private float zoom = 1f;
+    private float pan = 0f;
 
     public ChartView(Context context) {
         super(context);
@@ -52,6 +51,9 @@ public class ChartView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        //find drawing start
+        //find drawing end
+        //scale all values in between
         for (DrawItem drawItem : drawItems) {
             canvas.drawLine(
                     drawItem.getStartX(), drawItem.getStartY(),
@@ -62,38 +64,43 @@ public class ChartView extends View {
     }
 
     public void setData(List<InputItem> data) {
-        cachedInputItems = data;
-        calculateDrawData(data);
+        calculateGraphItems(data);
+        calculateDrawData();
         invalidate();
     }
 
-    public void switchZoomX() {
-        zoomX = !zoomX;
-        calculateDrawData(cachedInputItems);
-        invalidate();
+    public float getZoom() {
+        return zoom;
     }
 
-    public void switchZoomY() {
-        zoomY = !zoomY;
-        calculateDrawData(cachedInputItems);
-        invalidate();
-    }
-
-    public void pan() {
-        switch (panOffset) {
-            case 0:
-                panOffset = 1;
-                break;
-            case 1:
-                panOffset = 2;
-                break;
-            case 2:
-                panOffset = -1;
-                break;
-            default:
-                panOffset = 0;
+    public void setZoom(@FloatRange(from = 0.1, to = 1) float zoom) {
+        float newZoom = zoom;
+        if (newZoom > 1) {
+            newZoom = 1;
+        } else if (newZoom < 0.1f) {
+            newZoom = 0.1f;
         }
-        calculateDrawData(cachedInputItems);
+        this.zoom = newZoom;
+        calculateDrawData();
+        invalidate();
+    }
+
+    public float getPan() {
+        return pan;
+    }
+
+    /**
+     * @param pan Percentage offset from right border.
+     */
+    public void setPan(@FloatRange(from = 0, to = 1) float pan) {
+        float newPan = pan;
+        if (zoom + newPan > 1) {
+            newPan = 1 - zoom;
+        } else if (newPan < 0) {
+            newPan = 0;
+        }
+        this.pan = newPan;
+        calculateDrawData();
         invalidate();
     }
 
@@ -104,30 +111,8 @@ public class ChartView extends View {
         paint.setAntiAlias(true);
     }
 
-    private void calculateDrawData(List<InputItem> data1) {
-        List<InputItem> data = new ArrayList<>();
-        if (zoomX) {
-            int size = data1.size() / 2;
-            int start;
-            switch (panOffset) {
-                case 0:
-                    start = 1;
-                    break;
-                case 2:
-                    start = size / 2;
-                    break;
-                case 1:
-                default:
-                    start = size / 4;
-            }
-            int end = start + size;
-            for (int i = start; i < end; i++) {
-                data.add(data1.get(i));
-            }
-        } else {
-            data.addAll(data1);
-        }
-        List<DrawItem> drawData = new ArrayList<>();
+    private void calculateGraphItems(List<InputItem> data) {
+        List<GraphItem> graphData = new ArrayList<>();
         long verticalMin = data.get(0).getValue();
         long verticalMax = data.get(0).getValue();
         for (int i = 1; i < data.size(); i++) {
@@ -139,22 +124,25 @@ public class ChartView extends View {
             }
         }
         long verticalLength = Math.abs(verticalMax - verticalMin);
-        if (zoomY) {
-            verticalMin -= verticalLength / 2;
-            verticalMax += verticalLength / 2;
-            verticalLength = Math.abs(verticalMax - verticalMin);
+        for (int i = 0; i < data.size(); i++) {
+            float x = (float) i / (data.size() - 1);
+            float y = Math.abs(verticalMin - data.get(i).getValue()) / (float) verticalLength;
+            graphData.add(new GraphItem(x, y));
         }
-        int xInterval = getWidth() / (data.size() - 1);
-        for (int i = 1; i < data.size(); i++) {
-            InputItem start = data.get(i - 1);
-            InputItem end = data.get(i);
-            int startX = xInterval * (i - 1);
-            int startY = (int) ((start.getValue() - verticalMin) / (float) verticalLength * getHeight());
-            int stopX = xInterval * i;
-            int stopY = (int) ((end.getValue() - verticalMin) / (float) verticalLength * getHeight());
+        graphItems = graphData;
+    }
+
+    private void calculateDrawData() {
+        List<DrawItem> drawData = new ArrayList<>();
+        for (int i = 1; i < graphItems.size(); i++) {
+            GraphItem start = graphItems.get(i - 1);
+            GraphItem end = graphItems.get(i);
+            int startX = (int) (getWidth() * start.getX());
+            int startY = (int) (getHeight() - getHeight() * start.getY());
+            int stopX = (int) (getWidth() * end.getX());
+            int stopY = (int) (getHeight() - getHeight() * end.getY());
             drawData.add(new DrawItem(startX, startY, stopX, stopY));
         }
         drawItems = drawData;
-        Log.i("tag", "calculate: " + data + "\n" + drawData);
     }
 }

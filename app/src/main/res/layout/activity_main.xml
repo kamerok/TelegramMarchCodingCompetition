@@ -28,25 +28,28 @@
             android:text="reload" />
 
         <Button
-            android:id="@+id/view_zoom_x"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="onZoomXClick"
-            android:text="zoom_x" />
+            android:onClick="onIncreaseZoomClick"
+            android:text="zoom+" />
 
         <Button
-            android:id="@+id/view_zoom_y"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="onZoomYClick"
-            android:text="zoom_Y" />
+            android:onClick="onDecreaseZoomClick"
+            android:text="zoom-" />
 
         <Button
-            android:id="@+id/view_pan"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="onPanClick"
-            android:text="pan" />
+            android:onClick="onIncreasePanClick"
+            android:text="pan+" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onDecreasePanClick"
+            android:text="pan-" />
 
     </LinearLayout>
 
