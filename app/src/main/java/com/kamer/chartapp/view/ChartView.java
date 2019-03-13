@@ -51,9 +51,6 @@ public class ChartView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        //find drawing start
-        //find drawing end
-        //scale all values in between
         for (DrawItem drawItem : drawItems) {
             canvas.drawLine(
                     drawItem.getStartX(), drawItem.getStartY(),
@@ -73,14 +70,30 @@ public class ChartView extends View {
         return zoom;
     }
 
-    public void setZoom(@FloatRange(from = 0.1, to = 1) float zoom) {
+
+    //TODO: this function is hard and contains error (with 0.1 check)
+    public void setZoom(@FloatRange(from = 0.1, to = 1) float zoom, boolean isLeftSide) {
         float newZoom = zoom;
-        if (newZoom > 1) {
-            newZoom = 1;
-        } else if (newZoom < 0.1f) {
+        float newPan = pan;
+        if (isLeftSide) {
+            if (newZoom + pan > 1) {
+                newZoom = 1 - pan;
+            }
+        } else {
+            float zoomStart = 1 - this.zoom - pan;
+            if (zoomStart + zoom > 1) {
+                newZoom = 1 - zoomStart;
+                newPan = 0;
+            } else {
+                newZoom = zoom;
+                newPan = 1 - zoomStart - zoom;
+            }
+        }
+        if (newZoom < 0.1f) {
             newZoom = 0.1f;
         }
         this.zoom = newZoom;
+        this.pan = newPan;
         calculateDrawData();
         invalidate();
     }
@@ -133,16 +146,121 @@ public class ChartView extends View {
     }
 
     private void calculateDrawData() {
+        float startXPercentage = 1 - zoom - pan;
+        int firstInclusiveIndex = 0;
+        float startYPercentBeforeIndex = 0;
+        float startXPercentBeforeIndex = 0;
+        float startYPercentAfterIndex = 0;
+        float startXPercentAfterIndex = 0;
+        for (int i = 0; i < graphItems.size() - 1; i++) {
+            GraphItem current = graphItems.get(i);
+            GraphItem next = graphItems.get(i + 1);
+            if (current.getX() == startXPercentage) {
+                firstInclusiveIndex = i + 1;
+                startYPercentBeforeIndex = current.getY();
+                startXPercentBeforeIndex = current.getX();
+                startYPercentAfterIndex = current.getY();
+                startXPercentAfterIndex = current.getX();
+                break;
+            }
+            if (next.getX() == startXPercentage) {
+                firstInclusiveIndex = i + 2;
+                startYPercentBeforeIndex = next.getY();
+                startXPercentBeforeIndex = next.getX();
+                startYPercentAfterIndex = next.getY();
+                startXPercentAfterIndex = next.getX();
+                break;
+            }
+            if (current.getX() < startXPercentage && next.getX() > startXPercentage) {
+                firstInclusiveIndex = i + 1;
+                startYPercentBeforeIndex = current.getY();
+                startXPercentBeforeIndex = current.getX();
+                startYPercentAfterIndex = next.getY();
+                startXPercentAfterIndex = next.getX();
+                break;
+            }
+        }
+        float startYPercentage;
+        if (startYPercentBeforeIndex == startYPercentAfterIndex) {
+            startYPercentage = startYPercentAfterIndex;
+        } else {
+            startYPercentage = startYPercentBeforeIndex
+                    + (startXPercentage - startXPercentBeforeIndex)
+                    * (startYPercentAfterIndex - startYPercentBeforeIndex)
+                    / (startXPercentAfterIndex - startXPercentBeforeIndex);
+        }
+
+
+        float endXPercentage = startXPercentage + zoom;
+        int lastInclusiveIndex = 0;
+        float lastYPercentBeforeIndex = 0;
+        float lastXPercentBeforeIndex = 0;
+        float lastYPercentAfterIndex = 0;
+        float lastXPercentAfterIndex = 0;
+        for (int i = graphItems.size() - 1; i >= 1; i--) {
+            GraphItem current = graphItems.get(i);
+            GraphItem previous = graphItems.get(i - 1);
+            if (current.getX() == endXPercentage) {
+                lastInclusiveIndex = i - 1;
+                lastYPercentBeforeIndex = current.getY();
+                lastXPercentBeforeIndex = current.getX();
+                lastYPercentAfterIndex = current.getY();
+                lastXPercentAfterIndex = current.getX();
+                break;
+            }
+            if (previous.getX() == endXPercentage) {
+                firstInclusiveIndex = i - 2;
+                lastYPercentBeforeIndex = previous.getY();
+                lastXPercentBeforeIndex = previous.getX();
+                lastYPercentAfterIndex = previous.getY();
+                lastXPercentAfterIndex = previous.getX();
+                break;
+            }
+            if (current.getX() > endXPercentage && previous.getX() < endXPercentage) {
+                firstInclusiveIndex = i - 1;
+                lastYPercentBeforeIndex = previous.getY();
+                lastXPercentBeforeIndex = previous.getX();
+                lastYPercentAfterIndex = current.getY();
+                lastXPercentAfterIndex = current.getX();
+                break;
+            }
+        }
+        float endYPercentage;
+        if (lastYPercentBeforeIndex == lastYPercentAfterIndex) {
+            endYPercentage = lastYPercentAfterIndex;
+        } else {
+            endYPercentage = lastYPercentBeforeIndex
+                    + (endXPercentage - lastXPercentBeforeIndex)
+                    * (lastYPercentAfterIndex - lastYPercentBeforeIndex)
+                    / (lastXPercentAfterIndex - lastXPercentBeforeIndex);
+        }
+
         List<DrawItem> drawData = new ArrayList<>();
-        for (int i = 1; i < graphItems.size(); i++) {
+        int width = getWidth();
+        int height = getHeight();
+
+        GraphItem first = graphItems.get(firstInclusiveIndex);
+        float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
+        drawData.add(new DrawItem(0, (int) (height - startYPercentage * height), (int) (newXPercent * width), (int) (height - first.getY() * height)));
+
+        for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
             GraphItem start = graphItems.get(i - 1);
             GraphItem end = graphItems.get(i);
-            int startX = (int) (getWidth() * start.getX());
-            int startY = (int) (getHeight() - getHeight() * start.getY());
-            int stopX = (int) (getWidth() * end.getX());
-            int stopY = (int) (getHeight() - getHeight() * end.getY());
+            int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
+            int startY = (int) (height - height * start.getY());
+            int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
+            int stopY = (int) (height - height * end.getY());
             drawData.add(new DrawItem(startX, startY, stopX, stopY));
         }
+
+        GraphItem last = graphItems.get(lastInclusiveIndex);
+        newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
+        drawData.add(new DrawItem((int) (newXPercent * width), (int) (height - last.getY() * height), width, (int) (height - endYPercentage * height)));
+
         drawItems = drawData;
+    }
+
+    private float calcPercent(float value, float start, float end) {
+        return (value - start) / (end - start);
     }
 }

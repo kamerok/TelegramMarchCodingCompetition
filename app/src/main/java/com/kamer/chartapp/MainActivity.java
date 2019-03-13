@@ -53,11 +53,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onIncreaseZoomClick(View view) {
-        chartView.setZoom(chartView.getZoom() + 0.1f);
+        chartView.setZoom(chartView.getZoom() + 0.1f, true);
     }
 
     public void onDecreaseZoomClick(View view) {
-        chartView.setZoom(chartView.getZoom() - 0.1f);
+        chartView.setZoom(chartView.getZoom() - 0.1f, true);
     }
 
     public void onIncreasePanClick(View view) {
