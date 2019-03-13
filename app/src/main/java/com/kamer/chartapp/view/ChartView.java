@@ -146,7 +146,7 @@ public class ChartView extends View {
     }
 
     private void calculateDrawData() {
-        float startXPercentage = 1 - zoom - pan;
+        float startXPercentage = 1 - (zoom + pan);
         int firstInclusiveIndex = 0;
         float startYPercentBeforeIndex = 0;
         float startXPercentBeforeIndex = 0;
@@ -209,7 +209,7 @@ public class ChartView extends View {
                 break;
             }
             if (previous.getX() == endXPercentage) {
-                firstInclusiveIndex = i - 2;
+                lastInclusiveIndex = i - 2;
                 lastYPercentBeforeIndex = previous.getY();
                 lastXPercentBeforeIndex = previous.getX();
                 lastYPercentAfterIndex = previous.getY();
@@ -217,7 +217,7 @@ public class ChartView extends View {
                 break;
             }
             if (current.getX() > endXPercentage && previous.getX() < endXPercentage) {
-                firstInclusiveIndex = i - 1;
+                lastInclusiveIndex = i - 1;
                 lastYPercentBeforeIndex = previous.getY();
                 lastXPercentBeforeIndex = previous.getX();
                 lastYPercentAfterIndex = current.getY();
