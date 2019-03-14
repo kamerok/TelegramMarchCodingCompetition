@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    float newValue = progress / 100f;
+                    float newValue = progress / ((float) seekBar.getMax());
                     chartView.setLeftBorder(newValue);
                     syncBars();
                 }
@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    float newValue = progress / 100f;
+                    float newValue = progress / ((float) seekBar.getMax());
                     chartView.setRightBorder(newValue);
                     syncBars();
                 }
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    float newValue = progress / 100f;
+                    float newValue = progress / ((float) seekBar.getMax());
                     chartView.setPan(newValue);
                     syncBars();
                 }
@@ -102,9 +102,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void syncBars() {
-        leftView.setProgress((int) (chartView.getLeftBorder() * 100));
-        rightView.setProgress((int) (chartView.getRightBorder() * 100));
-        panView.setProgress((int) (chartView.getPan() * 100));
+        leftView.setProgress((int) (chartView.getLeftBorder() * leftView.getMax()));
+        rightView.setProgress((int) (chartView.getRightBorder() * rightView.getMax()));
+        panView.setProgress((int) (chartView.getPan() * panView.getMax()));
     }
 
     private List<InputItem> createData() {

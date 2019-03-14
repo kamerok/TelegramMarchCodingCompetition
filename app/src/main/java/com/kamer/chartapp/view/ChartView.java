@@ -75,7 +75,7 @@ public class ChartView extends View {
 
     public void setLeftBorder(@FloatRange(from = 0, to = 1) float leftBorder) {
         float newLeft = leftBorder;
-        float newVisiblePart = rightBorder - newLeft;
+        float newVisiblePart = rightBorder - leftBorder;
         if (newVisiblePart + pan > 1) {
             newLeft = 0;
         } else if (newVisiblePart < MIN_VISIBLE_PART) {
@@ -128,7 +128,10 @@ public class ChartView extends View {
             newPan = 0;
         }
         if (this.pan != newPan) {
+            float diff = this.pan - newPan;
             this.pan = newPan;
+            this.leftBorder += diff;
+            this.rightBorder += diff;
             calculateDrawData();
             invalidate();
         }
