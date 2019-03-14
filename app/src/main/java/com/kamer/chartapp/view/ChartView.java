@@ -448,6 +448,6 @@ public class ChartView extends View {
     }
 
     private boolean isFloatEquals(float f1, float f2) {
-        return Math.abs(f1 - f2) < 0.0000001f;
+        return Math.abs(f1 - f2) < 0.00001f;
     }
 }
