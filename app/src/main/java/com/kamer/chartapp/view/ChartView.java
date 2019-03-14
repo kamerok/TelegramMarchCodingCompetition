@@ -70,10 +70,9 @@ public class ChartView extends View {
     }
 
     public void setData(List<InputItem> data) {
-        calculateGraphItems(data);
+        graphItems = calculateGraphItems(data);
         calculateDrawData();
         animateZoom();
-        //invalidate();
     }
 
     public float getLeftBorder() {
@@ -151,72 +150,44 @@ public class ChartView extends View {
         paint.setAntiAlias(true);
     }
 
-    private void calculateGraphItems(List<InputItem> data) {
-        List<GraphItem> graphData = new ArrayList<>();
-        long verticalMin = data.get(0).getValue();
-        long verticalMax = data.get(0).getValue();
-        for (int i = 1; i < data.size(); i++) {
-            long value = data.get(i).getValue();
-            if (value > verticalMax) {
-                verticalMax = value;
-            } else if (value < verticalMin) {
-                verticalMin = value;
-            }
-        }
-        long verticalLength = Math.abs(verticalMax - verticalMin);
+    private List<GraphItem> calculateGraphItems(List<InputItem> data) {
+        List<GraphItem> result = new ArrayList<>();
+        long[] range = calculateRange(data);
+
+        long verticalLength = Math.abs(range[0] - range[1]);
         for (int i = 0; i < data.size(); i++) {
             float x = (float) i / (data.size() - 1);
-            float y = Math.abs(verticalMin - data.get(i).getValue()) / (float) verticalLength;
-            graphData.add(new GraphItem(x, y));
+            float y = Math.abs(range[0] - data.get(i).getValue()) / (float) verticalLength;
+            result.add(new GraphItem(x, y));
         }
-        graphItems = graphData;
+        return result;
+    }
+
+    private int findFirstIndexAfterPercent(float percent, List<GraphItem> items) {
+        for (int i = 0; i < items.size() - 2; i++) {
+            GraphItem current = items.get(i);
+            GraphItem next = items.get(i + 1);
+            if ((isFloatEquals(current.getX(), percent) || current.getX() < percent) && next.getX() > percent) {
+                return i + 1;
+            }
+        }
+        return -1;
+    }
+
+    private float findYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
+        return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
     }
 
     private void calculateDrawData() {
         float startXPercentage = 1 - (visiblePartSize() + pan);
-        int firstInclusiveIndex = 0;
-        float startYPercentBeforeIndex = 0;
-        float startXPercentBeforeIndex = 0;
-        float startYPercentAfterIndex = 0;
-        float startXPercentAfterIndex = 0;
-        for (int i = 0; i < graphItems.size() - 1; i++) {
-            GraphItem current = graphItems.get(i);
-            GraphItem next = graphItems.get(i + 1);
-            if (isFloatEquals(current.getX(), startXPercentage)) {
-                firstInclusiveIndex = i + 1;
-                startYPercentBeforeIndex = current.getY();
-                startXPercentBeforeIndex = current.getX();
-                startYPercentAfterIndex = current.getY();
-                startXPercentAfterIndex = current.getX();
-                break;
-            }
-            if (isFloatEquals(next.getX(), startXPercentage)) {
-                firstInclusiveIndex = i + 2;
-                startYPercentBeforeIndex = next.getY();
-                startXPercentBeforeIndex = next.getX();
-                startYPercentAfterIndex = next.getY();
-                startXPercentAfterIndex = next.getX();
-                break;
-            }
-            if (current.getX() < startXPercentage && next.getX() > startXPercentage) {
-                firstInclusiveIndex = i + 1;
-                startYPercentBeforeIndex = current.getY();
-                startXPercentBeforeIndex = current.getX();
-                startYPercentAfterIndex = next.getY();
-                startXPercentAfterIndex = next.getX();
-                break;
-            }
-        }
-        float startYPercentage;
-        if (isFloatEquals(startYPercentBeforeIndex, startYPercentAfterIndex)) {
-            startYPercentage = startYPercentAfterIndex;
-        } else {
-            startYPercentage = startYPercentBeforeIndex
-                    + (startXPercentage - startXPercentBeforeIndex)
-                    * (startYPercentAfterIndex - startYPercentBeforeIndex)
-                    / (startXPercentAfterIndex - startXPercentBeforeIndex);
-        }
-
+        int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
+        float startYPercentage = findYAtXByTwoPoints(
+                startXPercentage,
+                graphItems.get(firstInclusiveIndex - 1).getX(),
+                graphItems.get(firstInclusiveIndex - 1).getY(),
+                graphItems.get(firstInclusiveIndex).getX(),
+                graphItems.get(firstInclusiveIndex).getY()
+        );
 
         float endXPercentage = startXPercentage + visiblePartSize();
         int lastInclusiveIndex = 0;
@@ -277,10 +248,8 @@ public class ChartView extends View {
             GraphItem start = graphItems.get(i - 1);
             GraphItem end = graphItems.get(i);
             int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-            //int startY = (int) (height - height * start.getY());
             int startY = (int) (height - height * calcPercent(start.getY(), yMin, yMax));
             int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-            //int stopY = (int) (height - height * end.getY());
             int stopY = (int) (height - height * calcPercent(end.getY(), yMin, yMax));
             drawData.add(new DrawItem(startX, startY, stopX, stopY));
         }
@@ -449,5 +418,19 @@ public class ChartView extends View {
 
     private boolean isFloatEquals(float f1, float f2) {
         return Math.abs(f1 - f2) < 0.00001f;
+    }
+
+    private long[] calculateRange(List<InputItem> data) {
+        long verticalMin = data.get(0).getValue();
+        long verticalMax = data.get(0).getValue();
+        for (int i = 1; i < data.size(); i++) {
+            long value = data.get(i).getValue();
+            if (value > verticalMax) {
+                verticalMax = value;
+            } else if (value < verticalMin) {
+                verticalMin = value;
+            }
+        }
+        return new long[]{verticalMin, verticalMax};
     }
 }
