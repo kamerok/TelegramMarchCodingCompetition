@@ -21,11 +21,14 @@ import java.util.List;
 
 public class ChartView extends View {
 
+    private static final float MIN_VISIBLE_PART = 0.1f;
+
     private Paint paint;
     private List<GraphItem> graphItems;
     private List<DrawItem> drawItems;
 
-    private float zoom = 1f;
+    private float leftBorder = 0f;
+    private float rightBorder = 1f;
     private float pan = 0f;
 
     public ChartView(Context context) {
@@ -66,36 +69,48 @@ public class ChartView extends View {
         invalidate();
     }
 
-    public float getZoom() {
-        return zoom;
+    public float getLeftBorder() {
+        return leftBorder;
     }
 
+    public void setLeftBorder(@FloatRange(from = 0, to = 1) float leftBorder) {
+        float newLeft = leftBorder;
+        float newVisiblePart = rightBorder - newLeft;
+        if (newVisiblePart + pan > 1) {
+            newLeft = 0;
+        } else if (newVisiblePart < MIN_VISIBLE_PART) {
+            newLeft = rightBorder - MIN_VISIBLE_PART;
+        }
+        if (this.leftBorder != newLeft) {
+            this.leftBorder = newLeft;
+            calculateDrawData();
+            invalidate();
+        }
+    }
 
-    //TODO: this function is hard and contains error (with 0.1 check)
-    public void setZoom(@FloatRange(from = 0.1, to = 1) float zoom, boolean isLeftSide) {
-        float newZoom = zoom;
+    public float getRightBorder() {
+        return rightBorder;
+    }
+
+    public void setRightBorder(@FloatRange(from = 0, to = 1) float rightBorder) {
+        float newRight;
         float newPan = pan;
-        if (isLeftSide) {
-            if (newZoom + pan > 1) {
-                newZoom = 1 - pan;
-            }
+        if (rightBorder > 1) {
+            newRight = 1;
+            pan = 0;
+        } else if (rightBorder - leftBorder < MIN_VISIBLE_PART) {
+            newRight = leftBorder + MIN_VISIBLE_PART;
+            newPan = 1 - newRight;
         } else {
-            float zoomStart = 1 - this.zoom - pan;
-            if (zoomStart + zoom > 1) {
-                newZoom = 1 - zoomStart;
-                newPan = 0;
-            } else {
-                newZoom = zoom;
-                newPan = 1 - zoomStart - zoom;
-            }
+            newRight = rightBorder;
+            newPan = 1 - rightBorder;
         }
-        if (newZoom < 0.1f) {
-            newZoom = 0.1f;
+        if (this.rightBorder != newRight || pan != newPan) {
+            this.rightBorder = newRight;
+            this.pan = newPan;
+            calculateDrawData();
+            invalidate();
         }
-        this.zoom = newZoom;
-        this.pan = newPan;
-        calculateDrawData();
-        invalidate();
     }
 
     public float getPan() {
@@ -107,14 +122,16 @@ public class ChartView extends View {
      */
     public void setPan(@FloatRange(from = 0, to = 1) float pan) {
         float newPan = pan;
-        if (zoom + newPan > 1) {
-            newPan = 1 - zoom;
+        if (visiblePartSize() + newPan > 1) {
+            newPan = 1 - visiblePartSize();
         } else if (newPan < 0) {
             newPan = 0;
         }
-        this.pan = newPan;
-        calculateDrawData();
-        invalidate();
+        if (this.pan != newPan) {
+            this.pan = newPan;
+            calculateDrawData();
+            invalidate();
+        }
     }
 
     private void init() {
@@ -146,7 +163,7 @@ public class ChartView extends View {
     }
 
     private void calculateDrawData() {
-        float startXPercentage = 1 - (zoom + pan);
+        float startXPercentage = 1 - (visiblePartSize() + pan);
         int firstInclusiveIndex = 0;
         float startYPercentBeforeIndex = 0;
         float startXPercentBeforeIndex = 0;
@@ -191,7 +208,7 @@ public class ChartView extends View {
         }
 
 
-        float endXPercentage = startXPercentage + zoom;
+        float endXPercentage = startXPercentage + visiblePartSize();
         int lastInclusiveIndex = 0;
         float lastYPercentBeforeIndex = 0;
         float lastXPercentBeforeIndex = 0;
@@ -258,6 +275,10 @@ public class ChartView extends View {
         drawData.add(new DrawItem((int) (newXPercent * width), (int) (height - last.getY() * height), width, (int) (height - endYPercentage * height)));
 
         drawItems = drawData;
+    }
+
+    private float visiblePartSize() {
+        return rightBorder - leftBorder;
     }
 
     private float calcPercent(float value, float start, float end) {

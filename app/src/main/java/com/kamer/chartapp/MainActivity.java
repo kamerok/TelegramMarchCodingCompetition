@@ -1,9 +1,8 @@
 package com.kamer.chartapp;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.SeekBar;
 
@@ -36,7 +35,11 @@ public class MainActivity extends AppCompatActivity {
         leftView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d("TAG", "left: " + progress);
+                if (fromUser) {
+                    float newValue = progress / 100f;
+                    chartView.setLeftBorder(newValue);
+                    syncBars();
+                }
             }
 
             @Override
@@ -52,7 +55,11 @@ public class MainActivity extends AppCompatActivity {
         rightView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d("TAG", "right: " + progress);
+                if (fromUser) {
+                    float newValue = progress / 100f;
+                    chartView.setRightBorder(newValue);
+                    syncBars();
+                }
             }
 
             @Override
@@ -68,7 +75,11 @@ public class MainActivity extends AppCompatActivity {
         panView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                Log.d("TAG", "pan: " + progress);
+                if (fromUser) {
+                    float newValue = progress / 100f;
+                    chartView.setPan(newValue);
+                    syncBars();
+                }
             }
 
             @Override
@@ -85,8 +96,15 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 reloadData();
+                syncBars();
             }
         });
+    }
+
+    private void syncBars() {
+        leftView.setProgress((int) (chartView.getLeftBorder() * 100));
+        rightView.setProgress((int) (chartView.getRightBorder() * 100));
+        panView.setProgress((int) (chartView.getPan() * 100));
     }
 
     private List<InputItem> createData() {
