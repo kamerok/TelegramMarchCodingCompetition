@@ -14,43 +14,46 @@
         android:layout_marginTop="8dp"
         android:background="@android:color/background_light" />
 
-    <LinearLayout
+    <Button
+        android:id="@+id/view_reload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="onReloadClick"
+        android:text="reload" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Left" />
+
+    <SeekBar
+        android:id="@+id/view_left_border"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:max="100"
+        android:progress="1" />
 
-        <Button
-            android:id="@+id/view_reload"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onReloadClick"
-            android:text="reload" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Right" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onIncreaseZoomClick"
-            android:text="zoom+" />
+    <SeekBar
+        android:id="@+id/view_right_border"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onDecreaseZoomClick"
-            android:text="zoom-" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="Pan" />
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onIncreasePanClick"
-            android:text="pan+" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onDecreasePanClick"
-            android:text="pan-" />
-
-    </LinearLayout>
+    <SeekBar
+        android:id="@+id/view_pan"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </LinearLayout>
