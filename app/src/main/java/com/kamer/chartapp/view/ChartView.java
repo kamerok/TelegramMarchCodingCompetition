@@ -315,7 +315,6 @@ public class ChartView extends View {
         ValueAnimator animator = new ValueAnimator();
         animator.setValues(propertyMin, propertyMax);
         animator.setDuration(100);
-        animator.setInterpolator(new LinearInterpolator());
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
