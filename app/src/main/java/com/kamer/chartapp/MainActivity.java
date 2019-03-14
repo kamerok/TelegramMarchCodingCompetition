@@ -112,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
         int length = 25;
         for (int i = 0; i < length; i++) {
             long timestamp = System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS * i;
-            long value = random.nextInt(50);
+            long value = random.nextInt(500);
             result.add(new InputItem(timestamp, value));
         }
         return result;

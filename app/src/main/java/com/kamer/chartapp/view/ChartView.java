@@ -259,23 +259,41 @@ public class ChartView extends View {
         int width = getWidth();
         int height = getHeight();
 
+        float yMin = startYPercentage;
+        float yMax = startYPercentage;
+        if (endYPercentage < yMin) {
+            yMin = endYPercentage;
+        } else  if (endYPercentage > yMax) {
+            yMax = endYPercentage;
+        }
+        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
+            float value = graphItems.get(i).getY();
+            if (value < yMin) {
+                yMin = value;
+            } else  if (value > yMax) {
+                yMax = value;
+            }
+        }
+
         GraphItem first = graphItems.get(firstInclusiveIndex);
         float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
-        drawData.add(new DrawItem(0, (int) (height - startYPercentage * height), (int) (newXPercent * width), (int) (height - first.getY() * height)));
+        drawData.add(new DrawItem(0, (int) (height - calcPercent(startYPercentage, yMin, yMax) * height), (int) (newXPercent * width), (int) (height - calcPercent(first.getY(), yMin, yMax) * height)));
 
         for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
             GraphItem start = graphItems.get(i - 1);
             GraphItem end = graphItems.get(i);
             int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-            int startY = (int) (height - height * start.getY());
+            //int startY = (int) (height - height * start.getY());
+            int startY = (int) (height - height * calcPercent(start.getY(), yMin, yMax));
             int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-            int stopY = (int) (height - height * end.getY());
+            //int stopY = (int) (height - height * end.getY());
+            int stopY = (int) (height - height * calcPercent(end.getY(), yMin, yMax));
             drawData.add(new DrawItem(startX, startY, stopX, stopY));
         }
 
         GraphItem last = graphItems.get(lastInclusiveIndex);
         newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
-        drawData.add(new DrawItem((int) (newXPercent * width), (int) (height - last.getY() * height), width, (int) (height - endYPercentage * height)));
+        drawData.add(new DrawItem((int) (newXPercent * width), (int) (height - calcPercent(last.getY(), yMin, yMax) * height), width, (int) (height - calcPercent(endYPercentage, yMin, yMax) * height)));
 
         drawItems = drawData;
     }
