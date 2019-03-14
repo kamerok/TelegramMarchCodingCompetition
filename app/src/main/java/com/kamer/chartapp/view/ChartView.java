@@ -322,11 +322,15 @@ public class ChartView extends View {
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                animatedValue = new AnimatedValue(
-                        (float) valueAnimator.getAnimatedValue("minY"),
-                        (float) valueAnimator.getAnimatedValue("maxY")
-                );
-                calculateDrawData();
+                float newMin = (float) valueAnimator.getAnimatedValue("minY");
+                float newMax = (float) valueAnimator.getAnimatedValue("maxY");
+                if (newMin != animatedValue.getMinY() || newMax != animatedValue.getMaxY()) {
+                    animatedValue = new AnimatedValue(
+                            newMin,
+                            newMax
+                    );
+                    calculateDrawData();
+                }
                 invalidate();
             }
         });
