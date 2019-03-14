@@ -11,9 +11,7 @@ import android.os.Build;
 import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 import com.kamer.chartapp.view.data.AnimatedValue;
 import com.kamer.chartapp.view.data.DrawItem;
@@ -26,13 +24,11 @@ import java.util.List;
 
 public class ChartView extends View {
 
-    private static final String TAG = "ChartView";
-
     private static final float MIN_VISIBLE_PART = 0.1f;
 
     private Paint paint;
     public List<GraphItem> graphItems;
-    private List<DrawItem> drawItems;
+    private float[] drawItems;
 
     private float leftBorder = 0f;
     private float rightBorder = 1f;
@@ -65,13 +61,10 @@ public class ChartView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        for (DrawItem drawItem : drawItems) {
-            canvas.drawLine(
-                    drawItem.getStartX(), drawItem.getStartY(),
-                    drawItem.getStopX(), drawItem.getStopY(),
-                    paint
-            );
-        }
+        canvas.drawLines(
+                drawItems,
+                paint
+        );
     }
 
     public void setData(List<InputItem> data) {
@@ -294,7 +287,15 @@ public class ChartView extends View {
         newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
         drawData.add(new DrawItem((int) (newXPercent * width), (int) (height - calcPercent(last.getY(), yMin, yMax) * height), width, (int) (height - calcPercent(endYPercentage, yMin, yMax) * height)));
 
-        drawItems = drawData;
+        float[] points = new float[drawData.size() * 4];
+        for (int i = 0; i < drawData.size(); i++) {
+            DrawItem drawItem = drawData.get(i);
+            points[i * 4] = drawItem.getStartX();
+            points[i * 4 + 1] = drawItem.getStartY();
+            points[i * 4 + 2] = drawItem.getStopX();
+            points[i * 4 + 3] = drawItem.getStopY();
+        }
+        drawItems = points;
     }
 
     private float visiblePartSize() {
@@ -425,14 +426,14 @@ public class ChartView extends View {
         float yMax = startYPercentage;
         if (endYPercentage < yMin) {
             yMin = endYPercentage;
-        } else  if (endYPercentage > yMax) {
+        } else if (endYPercentage > yMax) {
             yMax = endYPercentage;
         }
         for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
             float value = graphItems.get(i).getY();
             if (value < yMin) {
                 yMin = value;
-            } else  if (value > yMax) {
+            } else if (value > yMax) {
                 yMax = value;
             }
         }
