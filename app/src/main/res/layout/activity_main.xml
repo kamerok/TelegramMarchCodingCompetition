@@ -14,6 +14,13 @@
         android:layout_marginTop="8dp"
         android:background="@android:color/background_light" />
 
+    <com.kamer.chartapp.view.PreviewView
+        android:id="@+id/view_preview"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/background_light" />
+
     <Button
         android:id="@+id/view_reload"
         android:layout_width="wrap_content"
@@ -31,7 +38,7 @@
         android:id="@+id/view_left_border"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:max="1000"
+        android:max="100000"
         android:progress="1" />
 
     <TextView
@@ -44,7 +51,7 @@
         android:id="@+id/view_right_border"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:max="1000" />
+        android:max="100000" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -56,6 +63,6 @@
         android:id="@+id/view_pan"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:max="1000" />
+        android:max="100000" />
 
 </LinearLayout>

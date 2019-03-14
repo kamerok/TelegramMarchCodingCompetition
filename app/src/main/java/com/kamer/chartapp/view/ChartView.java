@@ -24,7 +24,7 @@ public class ChartView extends View {
     private static final float MIN_VISIBLE_PART = 0.1f;
 
     private Paint paint;
-    private List<GraphItem> graphItems;
+    public List<GraphItem> graphItems;
     private List<DrawItem> drawItems;
 
     private float leftBorder = 0f;

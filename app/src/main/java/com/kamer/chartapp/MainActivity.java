@@ -7,6 +7,7 @@ import android.view.View;
 import android.widget.SeekBar;
 
 import com.kamer.chartapp.view.ChartView;
+import com.kamer.chartapp.view.PreviewView;
 import com.kamer.chartapp.view.data.InputItem;
 
 import java.util.ArrayList;
@@ -17,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Random random;
     private ChartView chartView;
+    private PreviewView previewView;
     private SeekBar leftView;
     private SeekBar rightView;
     private SeekBar panView;
@@ -28,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
 
         random = new Random();
         chartView = findViewById(R.id.view_chart);
+        previewView = findViewById(R.id.view_preview);
         leftView = findViewById(R.id.view_left_border);
         rightView = findViewById(R.id.view_right_border);
         panView = findViewById(R.id.view_pan);
@@ -105,6 +108,8 @@ public class MainActivity extends AppCompatActivity {
         leftView.setProgress((int) (chartView.getLeftBorder() * leftView.getMax()));
         rightView.setProgress((int) (chartView.getRightBorder() * rightView.getMax()));
         panView.setProgress((int) (chartView.getPan() * panView.getMax()));
+
+        previewView.setData(chartView.graphItems, chartView.getRightBorder(), chartView.getLeftBorder());
     }
 
     private List<InputItem> createData() {
@@ -124,5 +129,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void onReloadClick(View view) {
         reloadData();
+        syncBars();
     }
 }
