@@ -49,6 +49,7 @@ public class PreviewView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
+        if (drawItems == null) return;
         canvas.drawLine(
                 getWidth() * leftBorder, 0,
                 getWidth() * leftBorder, getHeight(),

@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_marginTop="8dp"
+        android:layerType="hardware"
         android:background="@android:color/background_light" />
 
     <com.kamer.chartapp.view.PreviewView

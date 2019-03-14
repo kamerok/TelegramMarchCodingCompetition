@@ -61,10 +61,12 @@ public class ChartView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        canvas.drawLines(
-                drawItems,
-                paint
-        );
+        if (drawItems != null) {
+            canvas.drawLines(
+                    drawItems,
+                    paint
+            );
+        }
     }
 
     public void setData(List<InputItem> data) {
