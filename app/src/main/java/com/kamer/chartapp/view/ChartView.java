@@ -1,5 +1,7 @@
 package com.kamer.chartapp.view;
 
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -9,8 +11,11 @@ import android.os.Build;
 import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 
+import com.kamer.chartapp.view.data.AnimatedValue;
 import com.kamer.chartapp.view.data.DrawItem;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.InputItem;
@@ -21,6 +26,8 @@ import java.util.List;
 
 public class ChartView extends View {
 
+    private static final String TAG = "ChartView";
+
     private static final float MIN_VISIBLE_PART = 0.1f;
 
     private Paint paint;
@@ -30,6 +37,10 @@ public class ChartView extends View {
     private float leftBorder = 0f;
     private float rightBorder = 1f;
     private float pan = 0f;
+
+    private AnimatedValue animatedValue = new AnimatedValue(0, 1);
+
+    private ValueAnimator currentAnimation;
 
     public ChartView(Context context) {
         super(context);
@@ -66,7 +77,8 @@ public class ChartView extends View {
     public void setData(List<InputItem> data) {
         calculateGraphItems(data);
         calculateDrawData();
-        invalidate();
+        animateZoom();
+        //invalidate();
     }
 
     public float getLeftBorder() {
@@ -84,7 +96,7 @@ public class ChartView extends View {
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
             calculateDrawData();
-            invalidate();
+            animateZoom();
         }
     }
 
@@ -109,7 +121,7 @@ public class ChartView extends View {
             this.rightBorder = newRight;
             this.pan = newPan;
             calculateDrawData();
-            invalidate();
+            animateZoom();
         }
     }
 
@@ -133,7 +145,7 @@ public class ChartView extends View {
             this.leftBorder += diff;
             this.rightBorder += diff;
             calculateDrawData();
-            invalidate();
+            animateZoom();
         }
     }
 
@@ -259,21 +271,8 @@ public class ChartView extends View {
         int width = getWidth();
         int height = getHeight();
 
-        float yMin = startYPercentage;
-        float yMax = startYPercentage;
-        if (endYPercentage < yMin) {
-            yMin = endYPercentage;
-        } else  if (endYPercentage > yMax) {
-            yMax = endYPercentage;
-        }
-        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-            float value = graphItems.get(i).getY();
-            if (value < yMin) {
-                yMin = value;
-            } else  if (value > yMax) {
-                yMax = value;
-            }
-        }
+        float yMin = animatedValue.getMinY();
+        float yMax = animatedValue.getMaxY();
 
         GraphItem first = graphItems.get(firstInclusiveIndex);
         float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
@@ -304,5 +303,141 @@ public class ChartView extends View {
 
     private float calcPercent(float value, float start, float end) {
         return (value - start) / (end - start);
+    }
+
+    private void animateZoom() {
+        AnimatedValue targetValue = calculateTargetValue();
+        PropertyValuesHolder propertyMin = PropertyValuesHolder.ofFloat("minY", animatedValue.getMinY(), targetValue.getMinY());
+        PropertyValuesHolder propertyMax = PropertyValuesHolder.ofFloat("maxY", animatedValue.getMaxY(), targetValue.getMaxY());
+        if (currentAnimation != null) {
+            currentAnimation.cancel();
+        }
+        ValueAnimator animator = new ValueAnimator();
+        animator.setValues(propertyMin, propertyMax);
+        animator.setDuration(100);
+        animator.setInterpolator(new LinearInterpolator());
+
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                animatedValue = new AnimatedValue(
+                        (float) valueAnimator.getAnimatedValue("minY"),
+                        (float) valueAnimator.getAnimatedValue("maxY")
+                );
+                calculateDrawData();
+                invalidate();
+            }
+        });
+        currentAnimation = animator;
+        animator.start();
+    }
+
+    private AnimatedValue calculateTargetValue() {
+        float startXPercentage = 1 - (visiblePartSize() + pan);
+        int firstInclusiveIndex = 0;
+        float startYPercentBeforeIndex = 0;
+        float startXPercentBeforeIndex = 0;
+        float startYPercentAfterIndex = 0;
+        float startXPercentAfterIndex = 0;
+        for (int i = 0; i < graphItems.size() - 1; i++) {
+            GraphItem current = graphItems.get(i);
+            GraphItem next = graphItems.get(i + 1);
+            if (current.getX() == startXPercentage) {
+                firstInclusiveIndex = i + 1;
+                startYPercentBeforeIndex = current.getY();
+                startXPercentBeforeIndex = current.getX();
+                startYPercentAfterIndex = current.getY();
+                startXPercentAfterIndex = current.getX();
+                break;
+            }
+            if (next.getX() == startXPercentage) {
+                firstInclusiveIndex = i + 2;
+                startYPercentBeforeIndex = next.getY();
+                startXPercentBeforeIndex = next.getX();
+                startYPercentAfterIndex = next.getY();
+                startXPercentAfterIndex = next.getX();
+                break;
+            }
+            if (current.getX() < startXPercentage && next.getX() > startXPercentage) {
+                firstInclusiveIndex = i + 1;
+                startYPercentBeforeIndex = current.getY();
+                startXPercentBeforeIndex = current.getX();
+                startYPercentAfterIndex = next.getY();
+                startXPercentAfterIndex = next.getX();
+                break;
+            }
+        }
+        float startYPercentage;
+        if (startYPercentBeforeIndex == startYPercentAfterIndex) {
+            startYPercentage = startYPercentAfterIndex;
+        } else {
+            startYPercentage = startYPercentBeforeIndex
+                    + (startXPercentage - startXPercentBeforeIndex)
+                    * (startYPercentAfterIndex - startYPercentBeforeIndex)
+                    / (startXPercentAfterIndex - startXPercentBeforeIndex);
+        }
+
+
+        float endXPercentage = startXPercentage + visiblePartSize();
+        int lastInclusiveIndex = 0;
+        float lastYPercentBeforeIndex = 0;
+        float lastXPercentBeforeIndex = 0;
+        float lastYPercentAfterIndex = 0;
+        float lastXPercentAfterIndex = 0;
+        for (int i = graphItems.size() - 1; i >= 1; i--) {
+            GraphItem current = graphItems.get(i);
+            GraphItem previous = graphItems.get(i - 1);
+            if (current.getX() == endXPercentage) {
+                lastInclusiveIndex = i - 1;
+                lastYPercentBeforeIndex = current.getY();
+                lastXPercentBeforeIndex = current.getX();
+                lastYPercentAfterIndex = current.getY();
+                lastXPercentAfterIndex = current.getX();
+                break;
+            }
+            if (previous.getX() == endXPercentage) {
+                lastInclusiveIndex = i - 2;
+                lastYPercentBeforeIndex = previous.getY();
+                lastXPercentBeforeIndex = previous.getX();
+                lastYPercentAfterIndex = previous.getY();
+                lastXPercentAfterIndex = previous.getX();
+                break;
+            }
+            if (current.getX() > endXPercentage && previous.getX() < endXPercentage) {
+                lastInclusiveIndex = i - 1;
+                lastYPercentBeforeIndex = previous.getY();
+                lastXPercentBeforeIndex = previous.getX();
+                lastYPercentAfterIndex = current.getY();
+                lastXPercentAfterIndex = current.getX();
+                break;
+            }
+        }
+        float endYPercentage;
+        if (lastYPercentBeforeIndex == lastYPercentAfterIndex) {
+            endYPercentage = lastYPercentAfterIndex;
+        } else {
+            endYPercentage = lastYPercentBeforeIndex
+                    + (endXPercentage - lastXPercentBeforeIndex)
+                    * (lastYPercentAfterIndex - lastYPercentBeforeIndex)
+                    / (lastXPercentAfterIndex - lastXPercentBeforeIndex);
+        }
+
+        float yMin = startYPercentage;
+        float yMax = startYPercentage;
+        if (endYPercentage < yMin) {
+            yMin = endYPercentage;
+        } else  if (endYPercentage > yMax) {
+            yMax = endYPercentage;
+        }
+        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
+            float value = graphItems.get(i).getY();
+            if (value < yMin) {
+                yMin = value;
+            } else  if (value > yMax) {
+                yMax = value;
+            }
+        }
+
+        return new AnimatedValue(yMin, yMax);
     }
 }
