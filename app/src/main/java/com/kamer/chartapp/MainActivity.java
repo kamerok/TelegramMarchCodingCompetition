@@ -133,6 +133,13 @@ public class MainActivity extends AppCompatActivity {
         }
         result.add(new InputGraph(values2, Color.parseColor("#F34C44")));
 
+        /*List<InputItem> values3 = new ArrayList<>();
+        for (int i = 0; i < values1.size(); i++) {
+            long value = random.nextInt(1000);
+            values3.add(new InputItem(values1.get(i).getTimestamp(), value));
+        }
+        result.add(new InputGraph(values3, Color.BLUE));*/
+
         return result;
     }
 
