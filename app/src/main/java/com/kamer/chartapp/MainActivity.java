@@ -160,6 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void reloadData() {
         List<InputGraph> data = createData();
+        buttonsLayout.removeViews(1, buttonsLayout.getChildCount() - 1);
         for (final InputGraph datum : data) {
             CheckBox checkBox = new CheckBox(this);
             checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
