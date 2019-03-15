@@ -14,8 +14,11 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.kamer.chartapp.view.data.AnimatedValue;
+import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawItem;
+import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
+import com.kamer.chartapp.view.data.InputGraph;
 import com.kamer.chartapp.view.data.InputItem;
 
 import java.util.ArrayList;
@@ -27,8 +30,9 @@ public class ChartView extends View {
     private static final float MIN_VISIBLE_PART = 0.1f;
 
     private Paint paint;
-    public List<GraphItem> graphItems;
-    private float[] drawItems;
+
+    private List<Graph> graphs = new ArrayList<>();
+    private List<DrawGraph> drawGraphs = new ArrayList<>();
 
     private float leftBorder = 0f;
     private float rightBorder = 1f;
@@ -61,16 +65,20 @@ public class ChartView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (drawItems != null) {
-            canvas.drawLines(
-                    drawItems,
-                    paint
-            );
+        if (!drawGraphs.isEmpty()) {
+            for (int i = 0; i < drawGraphs.size(); i++) {
+                DrawGraph graph = drawGraphs.get(i);
+                paint.setColor(graph.getColor());
+                canvas.drawLines(
+                        graph.getPoints(),
+                        paint
+                );
+            }
         }
     }
 
-    public void setData(List<InputItem> data) {
-        graphItems = calculateGraphItems(data);
+    public void setData(List<InputGraph> data) {
+        graphs = calculateGraphs(data);
         calculateDrawData();
         animateZoom();
     }
@@ -150,15 +158,27 @@ public class ChartView extends View {
         paint.setAntiAlias(true);
     }
 
-    private List<GraphItem> calculateGraphItems(List<InputItem> data) {
-        List<GraphItem> result = new ArrayList<>();
-        long[] range = calculateYRange(data);
+    private List<Graph> calculateGraphs(List<InputGraph> inputGraphs) {
+        List<Graph> result = new ArrayList<>();
 
-        long verticalLength = Math.abs(range[0] - range[1]);
-        for (int i = 0; i < data.size(); i++) {
-            float x = (float) i / (data.size() - 1);
-            float y = Math.abs(range[0] - data.get(i).getValue()) / (float) verticalLength;
-            result.add(new GraphItem(x, y));
+        List<InputItem> allItems = new ArrayList<>();
+        for (InputGraph inputGraph : inputGraphs) {
+            allItems.addAll(inputGraph.getValues());
+        }
+        long[] range = calculateYRange(allItems);
+        long min = range[0];
+        long max = range[1];
+        long verticalLength = Math.abs(min - max);
+
+        for (InputGraph inputGraph : inputGraphs) {
+            List<GraphItem> items = new ArrayList<>();
+            List<InputItem> data = inputGraph.getValues();
+            for (int i = 0; i < data.size(); i++) {
+                float x = (float) i / (data.size() - 1);
+                float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
+                items.add(new GraphItem(x, y));
+            }
+            result.add(new Graph(inputGraph.getColor(), items));
         }
         return result;
     }
@@ -190,66 +210,73 @@ public class ChartView extends View {
     }
 
     private void calculateDrawData() {
-        float startXPercentage = 1 - (visiblePartSize() + pan);
-        int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
-        float startYPercentage = calcYAtXByTwoPoints(
-                startXPercentage,
-                graphItems.get(firstInclusiveIndex - 1).getX(),
-                graphItems.get(firstInclusiveIndex - 1).getY(),
-                graphItems.get(firstInclusiveIndex).getX(),
-                graphItems.get(firstInclusiveIndex).getY()
-        );
+        ArrayList<DrawGraph> result = new ArrayList<>();
 
-        float endXPercentage = startXPercentage + visiblePartSize();
-        int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
-        float endYPercentage = calcYAtXByTwoPoints(
-                endXPercentage,
-                graphItems.get(lastInclusiveIndex).getX(),
-                graphItems.get(lastInclusiveIndex).getY(),
-                graphItems.get(lastInclusiveIndex + 1).getX(),
-                graphItems.get(lastInclusiveIndex + 1).getY()
-        );
+        for (Graph graph : graphs) {
+            List<GraphItem> graphItems = graph.getItems();
+            float startXPercentage = 1 - (visiblePartSize() + pan);
+            int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
+            float startYPercentage = calcYAtXByTwoPoints(
+                    startXPercentage,
+                    graphItems.get(firstInclusiveIndex - 1).getX(),
+                    graphItems.get(firstInclusiveIndex - 1).getY(),
+                    graphItems.get(firstInclusiveIndex).getX(),
+                    graphItems.get(firstInclusiveIndex).getY()
+            );
 
-        List<DrawItem> drawData = new ArrayList<>();
-        int width = getWidth();
-        int height = getHeight();
+            float endXPercentage = startXPercentage + visiblePartSize();
+            int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
+            float endYPercentage = calcYAtXByTwoPoints(
+                    endXPercentage,
+                    graphItems.get(lastInclusiveIndex).getX(),
+                    graphItems.get(lastInclusiveIndex).getY(),
+                    graphItems.get(lastInclusiveIndex + 1).getX(),
+                    graphItems.get(lastInclusiveIndex + 1).getY()
+            );
 
-        float yMin = animatedValue.getMinY();
-        float yMax = animatedValue.getMaxY();
+            List<DrawItem> drawData = new ArrayList<>();
+            int width = getWidth();
+            int height = getHeight();
 
-        GraphItem first = graphItems.get(firstInclusiveIndex);
-        float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
-        drawData.add(new DrawItem(
-                0, (int) (height - calcPercent(startYPercentage, yMin, yMax) * height),
-                (int) (newXPercent * width), (int) (height - calcPercent(first.getY(), yMin, yMax) * height)
-        ));
+            float yMin = animatedValue.getMinY();
+            float yMax = animatedValue.getMaxY();
 
-        for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
-            GraphItem start = graphItems.get(i - 1);
-            GraphItem end = graphItems.get(i);
-            int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-            int startY = (int) (height - height * calcPercent(start.getY(), yMin, yMax));
-            int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-            int stopY = (int) (height - height * calcPercent(end.getY(), yMin, yMax));
-            drawData.add(new DrawItem(startX, startY, stopX, stopY));
+            GraphItem first = graphItems.get(firstInclusiveIndex);
+            float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
+            drawData.add(new DrawItem(
+                    0, (int) (height - calcPercent(startYPercentage, yMin, yMax) * height),
+                    (int) (newXPercent * width), (int) (height - calcPercent(first.getY(), yMin, yMax) * height)
+            ));
+
+            for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
+                GraphItem start = graphItems.get(i - 1);
+                GraphItem end = graphItems.get(i);
+                int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
+                int startY = (int) (height - height * calcPercent(start.getY(), yMin, yMax));
+                int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
+                int stopY = (int) (height - height * calcPercent(end.getY(), yMin, yMax));
+                drawData.add(new DrawItem(startX, startY, stopX, stopY));
+            }
+
+            GraphItem last = graphItems.get(lastInclusiveIndex);
+            newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
+            drawData.add(new DrawItem(
+                    (int) (newXPercent * width), (int) (height - calcPercent(last.getY(), yMin, yMax) * height),
+                    width, (int) (height - calcPercent(endYPercentage, yMin, yMax) * height)
+            ));
+
+            float[] points = new float[drawData.size() * 4];
+            for (int i = 0; i < drawData.size(); i++) {
+                DrawItem drawItem = drawData.get(i);
+                points[i * 4] = drawItem.getStartX();
+                points[i * 4 + 1] = drawItem.getStartY();
+                points[i * 4 + 2] = drawItem.getStopX();
+                points[i * 4 + 3] = drawItem.getStopY();
+            }
+            result.add(new DrawGraph(graph.getColor(), points));
         }
 
-        GraphItem last = graphItems.get(lastInclusiveIndex);
-        newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
-        drawData.add(new DrawItem(
-                (int) (newXPercent * width), (int) (height - calcPercent(last.getY(), yMin, yMax) * height),
-                width, (int) (height - calcPercent(endYPercentage, yMin, yMax) * height)
-        ));
-
-        float[] points = new float[drawData.size() * 4];
-        for (int i = 0; i < drawData.size(); i++) {
-            DrawItem drawItem = drawData.get(i);
-            points[i * 4] = drawItem.getStartX();
-            points[i * 4 + 1] = drawItem.getStartY();
-            points[i * 4 + 2] = drawItem.getStopX();
-            points[i * 4 + 3] = drawItem.getStopY();
-        }
-        drawItems = points;
+        drawGraphs = result;
     }
 
     private float visiblePartSize() {
@@ -291,40 +318,50 @@ public class ChartView extends View {
     }
 
     private AnimatedValue calculateTargetValue() {
-        float startXPercentage = 1 - (visiblePartSize() + pan);
-        int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
-        float startYPercentage = calcYAtXByTwoPoints(
-                startXPercentage,
-                graphItems.get(firstInclusiveIndex - 1).getX(),
-                graphItems.get(firstInclusiveIndex - 1).getY(),
-                graphItems.get(firstInclusiveIndex).getX(),
-                graphItems.get(firstInclusiveIndex).getY()
-        );
+        float yMin = 1;
+        float yMax = 0;
+
+        for (Graph graph : graphs) {
+            List<GraphItem> graphItems = graph.getItems();
+            float startXPercentage = 1 - (visiblePartSize() + pan);
+            int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
+            float startYPercentage = calcYAtXByTwoPoints(
+                    startXPercentage,
+                    graphItems.get(firstInclusiveIndex - 1).getX(),
+                    graphItems.get(firstInclusiveIndex - 1).getY(),
+                    graphItems.get(firstInclusiveIndex).getX(),
+                    graphItems.get(firstInclusiveIndex).getY()
+            );
 
 
-        float endXPercentage = startXPercentage + visiblePartSize();
-        int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
-        float endYPercentage = calcYAtXByTwoPoints(
-                endXPercentage,
-                graphItems.get(lastInclusiveIndex).getX(),
-                graphItems.get(lastInclusiveIndex).getY(),
-                graphItems.get(lastInclusiveIndex + 1).getX(),
-                graphItems.get(lastInclusiveIndex + 1).getY()
-        );
+            float endXPercentage = startXPercentage + visiblePartSize();
+            int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
+            float endYPercentage = calcYAtXByTwoPoints(
+                    endXPercentage,
+                    graphItems.get(lastInclusiveIndex).getX(),
+                    graphItems.get(lastInclusiveIndex).getY(),
+                    graphItems.get(lastInclusiveIndex + 1).getX(),
+                    graphItems.get(lastInclusiveIndex + 1).getY()
+            );
 
-        float yMin = startYPercentage;
-        float yMax = startYPercentage;
-        if (endYPercentage < yMin) {
-            yMin = endYPercentage;
-        } else if (endYPercentage > yMax) {
-            yMax = endYPercentage;
-        }
-        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-            float value = graphItems.get(i).getY();
-            if (value < yMin) {
-                yMin = value;
-            } else if (value > yMax) {
-                yMax = value;
+            if (startYPercentage < yMin) {
+                yMin = startYPercentage;
+            } else if (startYPercentage > yMax) {
+                yMax = startYPercentage;
+            }
+
+            if (endYPercentage < yMin) {
+                yMin = endYPercentage;
+            } else if (endYPercentage > yMax) {
+                yMax = endYPercentage;
+            }
+            for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
+                float value = graphItems.get(i).getY();
+                if (value < yMin) {
+                    yMin = value;
+                } else if (value > yMax) {
+                    yMax = value;
+                }
             }
         }
 

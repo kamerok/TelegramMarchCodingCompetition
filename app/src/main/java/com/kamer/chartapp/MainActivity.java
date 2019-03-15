@@ -1,5 +1,6 @@
 package com.kamer.chartapp;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.format.DateUtils;
@@ -8,6 +9,7 @@ import android.widget.SeekBar;
 
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewView;
+import com.kamer.chartapp.view.data.InputGraph;
 import com.kamer.chartapp.view.data.InputItem;
 
 import java.util.ArrayList;
@@ -109,17 +111,28 @@ public class MainActivity extends AppCompatActivity {
         rightView.setProgress((int) (chartView.getRightBorder() * rightView.getMax()));
         panView.setProgress((int) (chartView.getPan() * panView.getMax()));
 
-        previewView.setData(chartView.graphItems, chartView.getRightBorder(), chartView.getLeftBorder());
+//        previewView.setData(chartView.graphItems, chartView.getRightBorder(), chartView.getLeftBorder());
     }
 
-    private List<InputItem> createData() {
-        List<InputItem> result = new ArrayList<>();
+    private List<InputGraph> createData() {
+        List<InputGraph> result = new ArrayList<>();
+
+        List<InputItem> values1 = new ArrayList<>();
         int length = 25;
         for (int i = 0; i < length; i++) {
             long timestamp = System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS * i;
             long value = random.nextInt(500);
-            result.add(new InputItem(timestamp, value));
+            values1.add(new InputItem(timestamp, value));
         }
+        result.add(new InputGraph(values1, Color.GREEN));
+
+        List<InputItem> values2 = new ArrayList<>();
+        for (int i = 0; i < values1.size(); i++) {
+            long value = random.nextInt(1500);
+            values2.add(new InputItem(values1.get(i).getTimestamp(), value));
+        }
+        result.add(new InputGraph(values2, Color.RED));
+
         return result;
     }
 
