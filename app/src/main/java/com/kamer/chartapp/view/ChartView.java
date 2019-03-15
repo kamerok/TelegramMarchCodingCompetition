@@ -13,7 +13,6 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.kamer.chartapp.view.data.AnimatedValue;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawItem;
 import com.kamer.chartapp.view.data.Graph;
@@ -22,7 +21,9 @@ import com.kamer.chartapp.view.data.InputGraph;
 import com.kamer.chartapp.view.data.InputItem;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class ChartView extends View {
@@ -39,7 +40,9 @@ public class ChartView extends View {
     private float rightBorder = 1f;
     private float pan = 0f;
 
-    private AnimatedValue animatedValue = new AnimatedValue(0, 1);
+    private Map<String, Float> alphas = new HashMap<>();
+    private float minY;
+    private float maxY;
 
     private ValueAnimator currentAnimation;
 
@@ -165,9 +168,7 @@ public class ChartView extends View {
 
         List<InputItem> allItems = new ArrayList<>();
         for (InputGraph inputGraph : inputGraphs) {
-            if (inputGraph.isEnabled()) {
-                allItems.addAll(inputGraph.getValues());
-            }
+            allItems.addAll(inputGraph.getValues());
         }
         if (allItems.isEmpty()) return result;
         long[] range = calculateYRange(allItems);
@@ -183,7 +184,7 @@ public class ChartView extends View {
                 float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
                 items.add(new GraphItem(x, y));
             }
-            result.add(new Graph(inputGraph.getColor(), items, inputGraph.isEnabled(), inputGraph.isEnabled() ? 1f : 0.5f));
+            result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, inputGraph.isEnabled()));
         }
         return result;
     }
@@ -243,31 +244,28 @@ public class ChartView extends View {
             int width = getWidth();
             int height = getHeight();
 
-            float yMin = animatedValue.getMinY();
-            float yMax = animatedValue.getMaxY();
-
             GraphItem first = graphItems.get(firstInclusiveIndex);
             float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
             drawData.add(new DrawItem(
-                    0, (int) (height - calcPercent(startYPercentage, yMin, yMax) * height),
-                    (int) (newXPercent * width), (int) (height - calcPercent(first.getY(), yMin, yMax) * height)
+                    0, (int) (height - calcPercent(startYPercentage, minY, maxY) * height),
+                    (int) (newXPercent * width), (int) (height - calcPercent(first.getY(), minY, maxY) * height)
             ));
 
             for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
                 GraphItem start = graphItems.get(i - 1);
                 GraphItem end = graphItems.get(i);
                 int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-                int startY = (int) (height - height * calcPercent(start.getY(), yMin, yMax));
+                int startY = (int) (height - height * calcPercent(start.getY(), minY, maxY));
                 int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-                int stopY = (int) (height - height * calcPercent(end.getY(), yMin, yMax));
+                int stopY = (int) (height - height * calcPercent(end.getY(), minY, maxY));
                 drawData.add(new DrawItem(startX, startY, stopX, stopY));
             }
 
             GraphItem last = graphItems.get(lastInclusiveIndex);
             newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
             drawData.add(new DrawItem(
-                    (int) (newXPercent * width), (int) (height - calcPercent(last.getY(), yMin, yMax) * height),
-                    width, (int) (height - calcPercent(endYPercentage, yMin, yMax) * height)
+                    (int) (newXPercent * width), (int) (height - calcPercent(last.getY(), minY, maxY) * height),
+                    width, (int) (height - calcPercent(endYPercentage, minY, maxY) * height)
             ));
 
             float[] points = new float[drawData.size() * 4];
@@ -278,7 +276,8 @@ public class ChartView extends View {
                 points[i * 4 + 2] = drawItem.getStopX();
                 points[i * 4 + 3] = drawItem.getStopY();
             }
-            result.add(new DrawGraph(graph.getColor(), points, (int) (graph.getAlpha() * 255)));
+            float alpha = getAlpha(graph.getName());
+            result.add(new DrawGraph(graph.getColor(), points, (int) (alpha * 255)));
         }
 
         drawGraphs = result;
@@ -293,14 +292,20 @@ public class ChartView extends View {
     }
 
     private void animateZoom() {
-        AnimatedValue targetValue = calculateTargetValue();
-        PropertyValuesHolder propertyMin = PropertyValuesHolder.ofFloat("minY", animatedValue.getMinY(), targetValue.getMinY());
-        PropertyValuesHolder propertyMax = PropertyValuesHolder.ofFloat("maxY", animatedValue.getMaxY(), targetValue.getMaxY());
+        float[] targetRange = calculateTargetRange();
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 2];
+        properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
+        properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
+        for (int i = 0; i < graphs.size(); i++) {
+            Graph graph = graphs.get(i);
+            String name = graph.getName();
+            properties[i + 2] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
+        }
         if (currentAnimation != null) {
             currentAnimation.cancel();
         }
         ValueAnimator animator = new ValueAnimator();
-        animator.setValues(propertyMin, propertyMax);
+        animator.setValues(properties);
         animator.setDuration(100);
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -308,13 +313,16 @@ public class ChartView extends View {
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 float newMin = (float) valueAnimator.getAnimatedValue("minY");
                 float newMax = (float) valueAnimator.getAnimatedValue("maxY");
-                if (newMin != animatedValue.getMinY() || newMax != animatedValue.getMaxY()) {
-                    animatedValue = new AnimatedValue(
-                            newMin,
-                            newMax
-                    );
-                    calculateDrawData();
+                HashMap<String, Float> newAlphas = new HashMap<>();
+                for (Graph graph : graphs) {
+                    Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
+                    float alpha = animatedValue != null ? (float) animatedValue : 1f;
+                    newAlphas.put(graph.getName(), alpha);
                 }
+                minY = newMin;
+                maxY = newMax;
+                alphas = newAlphas;
+                calculateDrawData();
                 invalidate();
             }
         });
@@ -322,7 +330,7 @@ public class ChartView extends View {
         animator.start();
     }
 
-    private AnimatedValue calculateTargetValue() {
+    private float[] calculateTargetRange() {
         float yMin = 1;
         float yMax = 0;
 
@@ -371,7 +379,7 @@ public class ChartView extends View {
             }
         }
 
-        return new AnimatedValue(yMin, yMax);
+        return new float[]{yMin, yMax};
     }
 
     private boolean isFloatEquals(float f1, float f2) {
@@ -390,5 +398,10 @@ public class ChartView extends View {
             }
         }
         return new long[]{verticalMin, verticalMax};
+    }
+
+    public float getAlpha(String name) {
+        Float animatedAlpha = alphas.get(name);
+        return animatedAlpha != null ? animatedAlpha : 1f;
     }
 }

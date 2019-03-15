@@ -4,16 +4,20 @@ import java.util.List;
 
 public class Graph {
 
+    private String name;
     private int color;
     private List<GraphItem> items;
     private boolean isEnabled;
-    private float alpha;
 
-    public Graph(int color, List<GraphItem> items, boolean isEnabled, float alpha) {
+    public Graph(String name, int color, List<GraphItem> items, boolean isEnabled) {
+        this.name = name;
         this.color = color;
         this.items = items;
         this.isEnabled = isEnabled;
-        this.alpha = alpha;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public int getColor() {
@@ -28,17 +32,13 @@ public class Graph {
         return isEnabled;
     }
 
-    public float getAlpha() {
-        return alpha;
-    }
-
     @Override
     public String toString() {
         return "Graph{" +
-                "color=" + color +
+                "name='" + name + '\'' +
+                ", color=" + color +
                 ", items=" + items +
                 ", isEnabled=" + isEnabled +
-                ", alpha=" + alpha +
                 '}';
     }
 }
