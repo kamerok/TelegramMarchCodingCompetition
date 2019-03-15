@@ -164,14 +164,18 @@ public class ChartView extends View {
 
         List<InputItem> allItems = new ArrayList<>();
         for (InputGraph inputGraph : inputGraphs) {
-            allItems.addAll(inputGraph.getValues());
+            if (inputGraph.isEnabled()) {
+                allItems.addAll(inputGraph.getValues());
+            }
         }
+        if (allItems.isEmpty()) return result;
         long[] range = calculateYRange(allItems);
         long min = range[0];
         long max = range[1];
         long verticalLength = Math.abs(min - max);
 
         for (InputGraph inputGraph : inputGraphs) {
+            if (!inputGraph.isEnabled()) continue;
             List<GraphItem> items = new ArrayList<>();
             List<InputItem> data = inputGraph.getValues();
             for (int i = 0; i < data.size(); i++) {

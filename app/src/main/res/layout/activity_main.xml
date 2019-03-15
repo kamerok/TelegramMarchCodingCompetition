@@ -12,8 +12,8 @@
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_marginTop="8dp"
-        android:layerType="hardware"
-        android:background="@android:color/background_light" />
+        android:background="@android:color/background_light"
+        android:layerType="hardware" />
 
     <com.kamer.chartapp.view.PreviewView
         android:id="@+id/view_preview"
@@ -22,12 +22,20 @@
         android:layout_marginTop="8dp"
         android:background="@android:color/background_light" />
 
-    <Button
-        android:id="@+id/view_reload"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/layout_buttons"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="onReloadClick"
-        android:text="reload" />
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/view_reload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onReloadClick"
+            android:text="reload" />
+    </LinearLayout>
+
 
     <TextView
         android:layout_width="wrap_content"
