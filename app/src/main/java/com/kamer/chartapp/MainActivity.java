@@ -124,14 +124,14 @@ public class MainActivity extends AppCompatActivity {
             long value = random.nextInt(500);
             values1.add(new InputItem(timestamp, value));
         }
-        result.add(new InputGraph(values1, Color.GREEN));
+        result.add(new InputGraph(values1, Color.parseColor("#3DC23F")));
 
         List<InputItem> values2 = new ArrayList<>();
         for (int i = 0; i < values1.size(); i++) {
             long value = random.nextInt(1500);
             values2.add(new InputItem(values1.get(i).getTimestamp(), value));
         }
-        result.add(new InputGraph(values2, Color.RED));
+        result.add(new InputGraph(values2, Color.parseColor("#F34C44")));
 
         return result;
     }
