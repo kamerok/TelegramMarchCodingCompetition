@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class ChartView extends View {
+public class ChartView extends View implements AnimationListener {
 
     private static final float MIN_VISIBLE_PART = 0.1f;
 
@@ -42,9 +42,13 @@ public class ChartView extends View {
 
     private Map<String, Float> alphas = new HashMap<>();
     private float minY;
-    private float maxY;
+    private float maxY = 1;
+    private float totalMinY;
+    private float totalMaxY = 1;
 
     private ValueAnimator currentAnimation;
+
+    public AnimationListener externalListener;
 
     public ChartView(Context context) {
         super(context);
@@ -80,6 +84,13 @@ public class ChartView extends View {
                 );
             }
         }
+    }
+
+    @Override
+    public void onValuesUpdated(float totalMinY, float totalMaxY, Map<String, Float> alphas) {
+        this.alphas = alphas;
+        calculateDrawData();
+        invalidate();
     }
 
     public void setData(List<InputGraph> data) {
@@ -292,14 +303,19 @@ public class ChartView extends View {
     }
 
     private void animateZoom() {
-        float[] targetRange = calculateTargetRange();
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 2];
+        float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
+        float[] totalRange = calculateTargetRange(0f, 1f);
+
+
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 4];
         properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
         properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
+        properties[2] = PropertyValuesHolder.ofFloat("totalMinY", totalMinY, totalRange[0]);
+        properties[3] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, totalRange[1]);
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
             String name = graph.getName();
-            properties[i + 2] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
+            properties[i + 4] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
         }
         if (currentAnimation != null) {
             currentAnimation.cancel();
@@ -313,6 +329,8 @@ public class ChartView extends View {
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 float newMin = (float) valueAnimator.getAnimatedValue("minY");
                 float newMax = (float) valueAnimator.getAnimatedValue("maxY");
+                float newTotalMin = (float) valueAnimator.getAnimatedValue("totalMinY");
+                float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
                 HashMap<String, Float> newAlphas = new HashMap<>();
                 for (Graph graph : graphs) {
                     Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
@@ -321,23 +339,25 @@ public class ChartView extends View {
                 }
                 minY = newMin;
                 maxY = newMax;
-                alphas = newAlphas;
-                calculateDrawData();
-                invalidate();
+                totalMinY = newTotalMin;
+                totalMaxY = newTotalMax;
+                onValuesUpdated(0, 0, newAlphas);
+                if (externalListener != null) {
+                    externalListener.onValuesUpdated(newTotalMin, newTotalMax, newAlphas);
+                }
             }
         });
         currentAnimation = animator;
         animator.start();
     }
 
-    private float[] calculateTargetRange() {
+    private float[] calculateTargetRange(float startXPercentage, float endXPercentage) {
         float yMin = 1;
         float yMax = 0;
 
         for (Graph graph : graphs) {
             if (!graph.isEnabled()) continue;
             List<GraphItem> graphItems = graph.getItems();
-            float startXPercentage = 1 - (visiblePartSize() + pan);
             int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
             float startYPercentage = calcYAtXByTwoPoints(
                     startXPercentage,
@@ -348,7 +368,6 @@ public class ChartView extends View {
             );
 
 
-            float endXPercentage = startXPercentage + visiblePartSize();
             int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
             float endYPercentage = calcYAtXByTwoPoints(
                     endXPercentage,

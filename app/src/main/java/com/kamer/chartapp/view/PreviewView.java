@@ -16,10 +16,12 @@ import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
-public class PreviewView extends View {
+public class PreviewView extends View implements AnimationListener {
 
     private Paint paint;
     private Paint linePaint;
@@ -27,6 +29,12 @@ public class PreviewView extends View {
 
     private float leftBorder = 0f;
     private float rightBorder = 1f;
+
+    private Map<String, Float> alphas = new HashMap<>();
+    private float minY;
+    private float maxY = 1f;
+
+    private List<Graph> graphs = new ArrayList<>();
 
     public PreviewView(Context context) {
         super(context);
@@ -54,6 +62,7 @@ public class PreviewView extends View {
         if (drawGraphs.isEmpty()) return;
         for (DrawGraph drawGraph : drawGraphs) {
             paint.setColor(drawGraph.getColor());
+            paint.setAlpha(drawGraph.getAlpha());
             canvas.drawLines(
                     drawGraph.getPoints(),
                     paint
@@ -71,7 +80,17 @@ public class PreviewView extends View {
         );
     }
 
+    @Override
+    public void onValuesUpdated(float totalMinY, float totalMaxY, Map<String, Float> alphas) {
+        this.alphas = alphas;
+        minY = totalMinY;
+        maxY = totalMaxY;
+        calculateDrawData(graphs);
+        invalidate();
+    }
+
     public void setData(List<Graph> data, float left, float rigth) {
+        graphs = data;
         rightBorder = rigth;
         leftBorder = left;
         calculateDrawData(data);
@@ -103,9 +122,9 @@ public class PreviewView extends View {
                 GraphItem start = graphItems.get(i - 1);
                 GraphItem end = graphItems.get(i);
                 int startX = (int) (width * start.getX());
-                int startY = (int) (height - height * start.getY());
+                int startY = (int) (height - height * calcPercent(start.getY(), minY, maxY));
                 int stopX = (int) (width * end.getX());
-                int stopY = (int) (height - height * end.getY());
+                int stopY = (int) (height - height * calcPercent(end.getY(), minY, maxY));
                 drawItems.add(new DrawItem(startX, startY, stopX, stopY));
             }
 
@@ -117,10 +136,20 @@ public class PreviewView extends View {
                 points[i * 4 + 2] = drawItem.getStopX();
                 points[i * 4 + 3] = drawItem.getStopY();
             }
+            float alpha = getAlpha(graph.getName());
 
-            result.add(new DrawGraph(graph.getColor(), points, 255));
+            result.add(new DrawGraph(graph.getColor(), points, ((int) (255 * alpha))));
         }
 
         drawGraphs = result;
+    }
+
+    public float getAlpha(String name) {
+        Float animatedAlpha = alphas.get(name);
+        return animatedAlpha != null ? animatedAlpha : 1f;
+    }
+
+    private float calcPercent(float value, float start, float end) {
+        return (value - start) / (end - start);
     }
 }

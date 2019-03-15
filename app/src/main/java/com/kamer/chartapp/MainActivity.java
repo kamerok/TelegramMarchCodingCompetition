@@ -114,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 syncBars();
             }
         });
+        chartView.externalListener = previewView;
     }
 
     public void onReloadClick(View view) {
