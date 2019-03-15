@@ -70,6 +70,7 @@ public class ChartView extends View {
             for (int i = 0; i < drawGraphs.size(); i++) {
                 DrawGraph graph = drawGraphs.get(i);
                 paint.setColor(graph.getColor());
+                paint.setAlpha(graph.getAlpha());
                 canvas.drawLines(
                         graph.getPoints(),
                         paint
@@ -175,7 +176,6 @@ public class ChartView extends View {
         long verticalLength = Math.abs(min - max);
 
         for (InputGraph inputGraph : inputGraphs) {
-            if (!inputGraph.isEnabled()) continue;
             List<GraphItem> items = new ArrayList<>();
             List<InputItem> data = inputGraph.getValues();
             for (int i = 0; i < data.size(); i++) {
@@ -183,7 +183,7 @@ public class ChartView extends View {
                 float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
                 items.add(new GraphItem(x, y));
             }
-            result.add(new Graph(inputGraph.getColor(), items));
+            result.add(new Graph(inputGraph.getColor(), items, inputGraph.isEnabled(), inputGraph.isEnabled() ? 1f : 0.5f));
         }
         return result;
     }
@@ -278,7 +278,7 @@ public class ChartView extends View {
                 points[i * 4 + 2] = drawItem.getStopX();
                 points[i * 4 + 3] = drawItem.getStopY();
             }
-            result.add(new DrawGraph(graph.getColor(), points));
+            result.add(new DrawGraph(graph.getColor(), points, (int) (graph.getAlpha() * 255)));
         }
 
         drawGraphs = result;
@@ -327,6 +327,7 @@ public class ChartView extends View {
         float yMax = 0;
 
         for (Graph graph : graphs) {
+            if (!graph.isEnabled()) continue;
             List<GraphItem> graphItems = graph.getItems();
             float startXPercentage = 1 - (visiblePartSize() + pan);
             int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);

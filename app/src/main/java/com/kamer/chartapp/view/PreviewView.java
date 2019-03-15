@@ -118,7 +118,7 @@ public class PreviewView extends View {
                 points[i * 4 + 3] = drawItem.getStopY();
             }
 
-            result.add(new DrawGraph(graph.getColor(), points));
+            result.add(new DrawGraph(graph.getColor(), points, ((int) (graph.getAlpha() * 255))));
         }
 
         drawGraphs = result;
