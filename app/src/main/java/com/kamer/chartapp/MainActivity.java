@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         rightView.setProgress((int) (chartView.getRightBorder() * rightView.getMax()));
         panView.setProgress((int) (chartView.getPan() * panView.getMax()));
 
-//        previewView.setData(chartView.graphItems, chartView.getRightBorder(), chartView.getLeftBorder());
+        previewView.setData(chartView.graphs, chartView.getRightBorder(), chartView.getLeftBorder());
     }
 
     private List<InputGraph> createData() {

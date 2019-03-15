@@ -31,7 +31,8 @@ public class ChartView extends View {
 
     private Paint paint;
 
-    private List<Graph> graphs = new ArrayList<>();
+    //TODO: change to private
+    public List<Graph> graphs = new ArrayList<>();
     private List<DrawGraph> drawGraphs = new ArrayList<>();
 
     private float leftBorder = 0f;

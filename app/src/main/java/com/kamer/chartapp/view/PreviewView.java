@@ -10,7 +10,9 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawItem;
+import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ public class PreviewView extends View {
 
     private Paint paint;
     private Paint linePaint;
-    private List<DrawItem> drawItems;
+    private List<DrawGraph> drawGraphs = new ArrayList<>();
 
     private float leftBorder = 0f;
     private float rightBorder = 1f;
@@ -49,7 +51,14 @@ public class PreviewView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (drawItems == null) return;
+        if (drawGraphs.isEmpty()) return;
+        for (DrawGraph drawGraph : drawGraphs) {
+            paint.setColor(drawGraph.getColor());
+            canvas.drawLines(
+                    drawGraph.getPoints(),
+                    paint
+            );
+        }
         canvas.drawLine(
                 getWidth() * leftBorder, 0,
                 getWidth() * leftBorder, getHeight(),
@@ -60,16 +69,9 @@ public class PreviewView extends View {
                 getWidth() * rightBorder, getHeight(),
                 linePaint
         );
-        for (DrawItem drawItem : drawItems) {
-            canvas.drawLine(
-                    drawItem.getStartX(), drawItem.getStartY(),
-                    drawItem.getStopX(), drawItem.getStopY(),
-                    paint
-            );
-        }
     }
 
-    public void setData(List<GraphItem> data, float left, float rigth) {
+    public void setData(List<Graph> data, float left, float rigth) {
         rightBorder = rigth;
         leftBorder = left;
         calculateDrawData(data);
@@ -88,21 +90,37 @@ public class PreviewView extends View {
         linePaint.setAntiAlias(true);
     }
 
-    private void calculateDrawData(List<GraphItem> graphItems) {
-        List<DrawItem> drawData = new ArrayList<>();
+    private void calculateDrawData(List<Graph> graphs) {
+        List<DrawGraph> result = new ArrayList<>();
         int width = getWidth();
         int height = getHeight();
 
-        for (int i = 1; i < graphItems.size(); i++) {
-            GraphItem start = graphItems.get(i - 1);
-            GraphItem end = graphItems.get(i);
-            int startX = (int) (width * start.getX());
-            int startY = (int) (height - height * start.getY());
-            int stopX = (int) (width * end.getX());
-            int stopY = (int) (height - height * end.getY());
-            drawData.add(new DrawItem(startX, startY, stopX, stopY));
+        for (Graph graph : graphs) {
+            List<GraphItem> graphItems = graph.getItems();
+            List<DrawItem> drawItems = new ArrayList<>();
+
+            for (int i = 1; i < graphItems.size(); i++) {
+                GraphItem start = graphItems.get(i - 1);
+                GraphItem end = graphItems.get(i);
+                int startX = (int) (width * start.getX());
+                int startY = (int) (height - height * start.getY());
+                int stopX = (int) (width * end.getX());
+                int stopY = (int) (height - height * end.getY());
+                drawItems.add(new DrawItem(startX, startY, stopX, stopY));
+            }
+
+            float[] points = new float[drawItems.size() * 4];
+            for (int i = 0; i < drawItems.size(); i++) {
+                DrawItem drawItem = drawItems.get(i);
+                points[i * 4] = drawItem.getStartX();
+                points[i * 4 + 1] = drawItem.getStartY();
+                points[i * 4 + 2] = drawItem.getStopX();
+                points[i * 4 + 3] = drawItem.getStopY();
+            }
+
+            result.add(new DrawGraph(graph.getColor(), points));
         }
 
-        drawItems = drawData;
+        drawGraphs = result;
     }
 }
