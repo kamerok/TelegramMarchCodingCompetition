@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -63,8 +64,8 @@ public class PreviewView extends View implements AnimationListener {
         for (DrawGraph drawGraph : drawGraphs) {
             paint.setColor(drawGraph.getColor());
             paint.setAlpha(drawGraph.getAlpha());
-            canvas.drawLines(
-                    drawGraph.getPoints(),
+            canvas.drawPath(
+                    drawGraph.getPath(),
                     paint
             );
         }
@@ -102,6 +103,8 @@ public class PreviewView extends View implements AnimationListener {
         paint.setColor(Color.RED);
         paint.setStrokeWidth(5);
         paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.ROUND);
 
         linePaint = new Paint();
         linePaint.setColor(Color.GRAY);
@@ -128,17 +131,16 @@ public class PreviewView extends View implements AnimationListener {
                 drawItems.add(new DrawItem(startX, startY, stopX, stopY));
             }
 
-            float[] points = new float[drawItems.size() * 4];
-            for (int i = 0; i < drawItems.size(); i++) {
-                DrawItem drawItem = drawItems.get(i);
-                points[i * 4] = drawItem.getStartX();
-                points[i * 4 + 1] = drawItem.getStartY();
-                points[i * 4 + 2] = drawItem.getStopX();
-                points[i * 4 + 3] = drawItem.getStopY();
+            Path path = new Path();
+            for (DrawItem item : drawItems) {
+                if (path.isEmpty()) {
+                    path.moveTo(item.getStartX(), item.getStartY());
+                }
+                path.lineTo(item.getStopX(), item.getStopY());
             }
             float alpha = getAlpha(graph.getName());
 
-            result.add(new DrawGraph(graph.getColor(), points, ((int) (255 * alpha))));
+            result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
         }
 
         drawGraphs = result;

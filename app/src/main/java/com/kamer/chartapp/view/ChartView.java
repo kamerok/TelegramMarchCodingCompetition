@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.os.Build;
 import android.support.annotation.FloatRange;
 import android.support.annotation.Nullable;
@@ -78,8 +79,8 @@ public class ChartView extends View implements AnimationListener {
                 DrawGraph graph = drawGraphs.get(i);
                 paint.setColor(graph.getColor());
                 paint.setAlpha(graph.getAlpha());
-                canvas.drawLines(
-                        graph.getPoints(),
+                canvas.drawPath(
+                        graph.getPath(),
                         paint
                 );
             }
@@ -170,8 +171,10 @@ public class ChartView extends View implements AnimationListener {
     private void init() {
         paint = new Paint();
         paint.setColor(Color.RED);
-        paint.setStrokeWidth(10);
+        paint.setStrokeWidth(8);
         paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeJoin(Paint.Join.ROUND);
     }
 
     private List<Graph> calculateGraphs(List<InputGraph> inputGraphs) {
@@ -279,16 +282,15 @@ public class ChartView extends View implements AnimationListener {
                     width, (int) (height - calcPercent(endYPercentage, minY, maxY) * height)
             ));
 
-            float[] points = new float[drawData.size() * 4];
-            for (int i = 0; i < drawData.size(); i++) {
-                DrawItem drawItem = drawData.get(i);
-                points[i * 4] = drawItem.getStartX();
-                points[i * 4 + 1] = drawItem.getStartY();
-                points[i * 4 + 2] = drawItem.getStopX();
-                points[i * 4 + 3] = drawItem.getStopY();
+            Path path = new Path();
+            for (DrawItem item : drawData) {
+                if (path.isEmpty()) {
+                    path.moveTo(item.getStartX(), item.getStartY());
+                }
+                path.lineTo(item.getStopX(), item.getStopY());
             }
             float alpha = getAlpha(graph.getName());
-            result.add(new DrawGraph(graph.getColor(), points, (int) (alpha * 255)));
+            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
         drawGraphs = result;

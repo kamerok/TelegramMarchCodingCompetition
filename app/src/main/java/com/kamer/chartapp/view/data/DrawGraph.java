@@ -1,16 +1,17 @@
 package com.kamer.chartapp.view.data;
 
-import java.util.Arrays;
+import android.graphics.Path;
+
 
 public class DrawGraph {
 
     private int color;
-    private float[] points;
+    private Path path;
     private int alpha;
 
-    public DrawGraph(int color, float[] points, int alpha) {
+    public DrawGraph(int color, Path path, int alpha) {
         this.color = color;
-        this.points = points;
+        this.path = path;
         this.alpha = alpha;
     }
 
@@ -18,8 +19,8 @@ public class DrawGraph {
         return color;
     }
 
-    public float[] getPoints() {
-        return points;
+    public Path getPath() {
+        return path;
     }
 
     public int getAlpha() {
@@ -30,7 +31,7 @@ public class DrawGraph {
     public String toString() {
         return "DrawGraph{" +
                 "color=" + color +
-                ", points=" + Arrays.toString(points) +
+                ", path=" + path +
                 ", alpha=" + alpha +
                 '}';
     }
