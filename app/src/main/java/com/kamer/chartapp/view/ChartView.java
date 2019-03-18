@@ -14,8 +14,10 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.kamer.chartapp.view.data.DrawData;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawItem;
+import com.kamer.chartapp.view.data.DrawText;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.InputGraph;
@@ -33,10 +35,12 @@ public class ChartView extends View implements AnimationListener {
     private static final int PADDING_VERTICAL = 50;
 
     private Paint paint;
+    private Paint guideLinePaint;
+    private Paint textPaint;
 
     //TODO: change to private
     public List<Graph> graphs = new ArrayList<>();
-    private List<DrawGraph> drawGraphs = new ArrayList<>();
+    private DrawData drawData;
 
     private float leftBorder = 0f;
     private float rightBorder = 1f;
@@ -75,9 +79,15 @@ public class ChartView extends View implements AnimationListener {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (!drawGraphs.isEmpty()) {
-            for (int i = 0; i < drawGraphs.size(); i++) {
-                DrawGraph graph = drawGraphs.get(i);
+        canvas.drawLines(drawData.getYGuides(), guideLinePaint);
+        List<DrawText> texts = drawData.getTexts();
+        for (int i = 0; i < texts.size(); i++) {
+            DrawText text = texts.get(i);
+            canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
+        }
+        if (!drawData.getDrawGraphs().isEmpty()) {
+            for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
+                DrawGraph graph = drawData.getDrawGraphs().get(i);
                 paint.setColor(graph.getColor());
                 paint.setAlpha(graph.getAlpha());
                 canvas.drawPath(
@@ -176,6 +186,17 @@ public class ChartView extends View implements AnimationListener {
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
+
+        guideLinePaint = new Paint();
+        guideLinePaint.setColor(Color.GRAY);
+        guideLinePaint.setStrokeWidth(4);
+        guideLinePaint.setAntiAlias(true);
+        guideLinePaint.setStyle(Paint.Style.STROKE);
+
+        textPaint = new Paint();
+        textPaint.setColor(Color.GRAY);
+        textPaint.setTextSize(40);
+        guideLinePaint.setAntiAlias(true);
     }
 
     private List<Graph> calculateGraphs(List<InputGraph> inputGraphs) {
@@ -294,12 +315,27 @@ public class ChartView extends View implements AnimationListener {
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
-        drawGraphs = result;
+        float[] yLines = new float[6 * 4];
+        List<DrawText> drawTexts = new ArrayList<>();
+        for (int i = 0; i < 6; i++) {
+            float segment = Math.abs(maxY - minY) / 6;
+            float percent = 1 - calcPercent(((segment) * i + minY), minY, maxY);
+            float y = getHeight() * percent;
+            yLines[i * 4] = 0;
+            yLines[i * 4 + 1] = y;
+            yLines[i * 4 + 2] = getWidth();
+            yLines[i * 4 + 3] = y;
+
+            float realPercent = 1 - percent;
+            drawTexts.add(new DrawText(realPercent + "", 0, y));
+        }
+
+        drawData = new DrawData(result, yLines, drawTexts);
     }
 
     private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
         int heightWithPadding = height - PADDING_VERTICAL * 2;
-        return  ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + PADDING_VERTICAL;
+        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + PADDING_VERTICAL;
     }
 
     private float visiblePartSize() {
