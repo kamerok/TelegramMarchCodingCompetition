@@ -31,7 +31,7 @@ public class DataConverter {
                 float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
                 items.add(new GraphItem(x, y));
             }
-            result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, inputGraph.isEnabled()));
+            result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
         }
         return result;
     }

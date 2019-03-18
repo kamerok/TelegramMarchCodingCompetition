@@ -1,28 +1,23 @@
 package com.kamer.chartapp;
 
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.widget.CompoundButtonCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.format.DateUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
+import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewView;
 import com.kamer.chartapp.view.data.Graph;
-import com.kamer.chartapp.data.InputGraph;
-import com.kamer.chartapp.data.InputItem;
 import com.kamer.chartapp.view.utils.DataConverter;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements ChartManager.UpdateListener {
 
@@ -31,7 +26,6 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     private SeekBar panView;
     private ViewGroup buttonsLayout;
 
-    private Random random;
 
     private ChartManager chartManager;
 
@@ -40,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        random = new Random();
         ChartView chartView = findViewById(R.id.view_chart);
         PreviewView previewView = findViewById(R.id.view_preview);
         leftView = findViewById(R.id.view_left_border);
@@ -137,37 +130,8 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         reloadData();
     }
 
-    private List<InputGraph> createData() {
-        List<InputGraph> result = new ArrayList<>();
-
-        List<InputItem> values1 = new ArrayList<>();
-        int length = 25;
-        for (int i = 0; i < length; i++) {
-            long timestamp = System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS * i;
-            long value = random.nextInt(500);
-            values1.add(new InputItem(timestamp, value));
-        }
-        result.add(new InputGraph(values1, Color.parseColor("#3DC23F"), "First", true));
-
-        List<InputItem> values2 = new ArrayList<>();
-        for (int i = 0; i < values1.size(); i++) {
-            long value = random.nextInt(1500);
-            values2.add(new InputItem(values1.get(i).getTimestamp(), value));
-        }
-        result.add(new InputGraph(values2, Color.parseColor("#F34C44"), "Second", true));
-
-        /*List<InputItem> values3 = new ArrayList<>();
-        for (int i = 0; i < values1.size(); i++) {
-            long value = random.nextInt(1000);
-            values3.add(new InputItem(values1.get(i).getTimestamp(), value));
-        }
-        result.add(new InputGraph(values3, Color.BLUE, "kopa", true));*/
-
-        return result;
-    }
-
     private void reloadData() {
-        chartManager.setData(DataConverter.convertInput(createData()));
+        chartManager.setData(DataConverter.convertInput(DataProvider.getData().get(0)));
     }
 
 }

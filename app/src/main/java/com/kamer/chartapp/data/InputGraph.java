@@ -7,13 +7,11 @@ public class InputGraph {
     private List<InputItem> values;
     private int color;
     private String name;
-    private boolean isEnabled;
 
-    public InputGraph(List<InputItem> values, int color, String name, boolean isEnabled) {
+    public InputGraph(List<InputItem> values, int color, String name) {
         this.values = values;
         this.color = color;
         this.name = name;
-        this.isEnabled = isEnabled;
     }
 
     public List<InputItem> getValues() {
@@ -28,17 +26,12 @@ public class InputGraph {
         return name;
     }
 
-    public boolean isEnabled() {
-        return isEnabled;
-    }
-
     @Override
     public String toString() {
         return "InputGraph{" +
                 "values=" + values +
                 ", color=" + color +
                 ", name='" + name + '\'' +
-                ", isEnabled=" + isEnabled +
                 '}';
     }
 }
