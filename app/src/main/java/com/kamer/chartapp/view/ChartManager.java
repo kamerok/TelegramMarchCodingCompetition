@@ -13,6 +13,7 @@ import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.InputGraph;
 import com.kamer.chartapp.view.data.InputItem;
+import com.kamer.chartapp.view.data.PreviewDrawData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -136,7 +137,8 @@ public class ChartManager {
     }
 
     private void sync() {
-        previewView.setData(graphs, leftBorder, rightBorder);
+        calculateDrawData1(graphs);
+        previewView.invalidate();
         updateListener.onUpdate(leftBorder, rightBorder, pan, inputGraphs);
     }
 
@@ -274,6 +276,40 @@ public class ChartManager {
         chartView.setDrawData(new GraphDrawData(result, yLines, drawTexts));
     }
 
+    private void calculateDrawData1(List<Graph> graphs) {
+        List<DrawGraph> result = new ArrayList<>();
+        int width = previewView.getWidth();
+        int height = previewView.getHeight();
+
+        for (Graph graph : graphs) {
+            List<GraphItem> graphItems = graph.getItems();
+            List<DrawItem> drawItems = new ArrayList<>();
+
+            for (int i = 1; i < graphItems.size(); i++) {
+                GraphItem start = graphItems.get(i - 1);
+                GraphItem end = graphItems.get(i);
+                int startX = (int) (width * start.getX());
+                int startY = (int) (height - height * calcPercent(start.getY(), totalMinY, totalMaxY));
+                int stopX = (int) (width * end.getX());
+                int stopY = (int) (height - height * calcPercent(end.getY(), totalMinY, totalMaxY));
+                drawItems.add(new DrawItem(startX, startY, stopX, stopY));
+            }
+
+            Path path = new Path();
+            for (DrawItem item : drawItems) {
+                if (path.isEmpty()) {
+                    path.moveTo(item.getStartX(), item.getStartY());
+                }
+                path.lineTo(item.getStopX(), item.getStopY());
+            }
+            float alpha = getAlpha(graph.getName());
+
+            result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
+        }
+
+        previewView.setDrawData(new PreviewDrawData(result, leftBorder, rightBorder));
+    }
+
     private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
         int heightWithPadding = height - PADDING_VERTICAL * 2;
         return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + PADDING_VERTICAL;
@@ -331,7 +367,8 @@ public class ChartManager {
                 calculateDrawData();
                 chartView.invalidate();
 
-                previewView.onValuesUpdated(newTotalMin, newTotalMax, newAlphas);
+                calculateDrawData1(graphs);
+                previewView.invalidate();
             }
         });
         currentAnimation = animator;
