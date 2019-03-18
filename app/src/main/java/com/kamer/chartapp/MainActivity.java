@@ -12,6 +12,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
+import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewView;
 import com.kamer.chartapp.view.data.InputGraph;
@@ -21,10 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ChartManager.UpdateListener {
 
-    private ChartView chartView;
-    private PreviewView previewView;
     private SeekBar leftView;
     private SeekBar rightView;
     private SeekBar panView;
@@ -32,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Random random;
 
-    private List<InputGraph> graphs = new ArrayList<>();
+    private ChartManager chartManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         random = new Random();
-        chartView = findViewById(R.id.view_chart);
-        previewView = findViewById(R.id.view_preview);
+        ChartView chartView = findViewById(R.id.view_chart);
+        PreviewView previewView = findViewById(R.id.view_preview);
         leftView = findViewById(R.id.view_left_border);
         rightView = findViewById(R.id.view_right_border);
         panView = findViewById(R.id.view_pan);
@@ -52,8 +51,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     float newValue = progress / ((float) seekBar.getMax());
-                    chartView.setLeftBorder(newValue);
-                    syncBars();
+                    chartManager.setLeftBorder(newValue);
                 }
             }
 
@@ -72,8 +70,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     float newValue = progress / ((float) seekBar.getMax());
-                    chartView.setRightBorder(newValue);
-                    syncBars();
+                    chartManager.setRightBorder(newValue);
                 }
             }
 
@@ -92,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
                     float newValue = progress / ((float) seekBar.getMax());
-                    chartView.setPan(newValue);
-                    syncBars();
+                    chartManager.setPan(newValue);
                 }
             }
 
@@ -107,27 +103,36 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        chartView.post(new Runnable() {
-            @Override
-            public void run() {
-                reloadData();
-                syncBars();
-            }
-        });
-        chartView.externalListener = previewView;
+
+        chartManager = new ChartManager(chartView, previewView, this);
+        reloadData();
+    }
+
+    @Override
+    public void onUpdate(float left, float right, float pan, List<InputGraph> graphs) {
+        leftView.setProgress((int) (left * leftView.getMax()));
+        rightView.setProgress((int) (right * rightView.getMax()));
+        panView.setProgress((int) (pan * panView.getMax()));
+
+        buttonsLayout.removeViews(1, buttonsLayout.getChildCount() - 1);
+        for (final InputGraph datum : graphs) {
+            CheckBox checkBox = new CheckBox(this);
+            checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            checkBox.setText(datum.getName());
+            checkBox.setChecked(datum.isEnabled());
+            CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(datum.getColor()));
+            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    chartManager.updateGraphEnabled(datum.getName(), isChecked);
+                }
+            });
+            buttonsLayout.addView(checkBox);
+        }
     }
 
     public void onReloadClick(View view) {
         reloadData();
-        syncBars();
-    }
-
-    private void syncBars() {
-        leftView.setProgress((int) (chartView.getLeftBorder() * leftView.getMax()));
-        rightView.setProgress((int) (chartView.getRightBorder() * rightView.getMax()));
-        panView.setProgress((int) (chartView.getPan() * panView.getMax()));
-
-        previewView.setData(chartView.graphs, chartView.getRightBorder(), chartView.getLeftBorder());
     }
 
     private List<InputGraph> createData() {
@@ -160,36 +165,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void reloadData() {
-        List<InputGraph> data = createData();
-        buttonsLayout.removeViews(1, buttonsLayout.getChildCount() - 1);
-        for (final InputGraph datum : data) {
-            CheckBox checkBox = new CheckBox(this);
-            checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            checkBox.setText(datum.getName());
-            checkBox.setChecked(true);
-            CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(datum.getColor()));
-            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    updateGraphEnabled(datum.getName(), isChecked);
-                }
-            });
-            buttonsLayout.addView(checkBox);
-        }
-        graphs = data;
-        chartView.setData(data);
+        chartManager.setData(createData());
     }
 
-    private void updateGraphEnabled(String name, boolean isEnabled) {
-        for (int i = 0; i < graphs.size(); i++) {
-            InputGraph graph = graphs.get(i);
-            if (graph.getName().equals(name)) {
-                graphs.set(i, new InputGraph(graph.getValues(), graph.getColor(), graph.getName(), isEnabled));
-                //TODO: update?
-                chartView.setData(graphs);
-                syncBars();
-                return;
-            }
-        }
-    }
 }
