@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
+import android.widget.Checkable;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
 
@@ -119,7 +120,20 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
             checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    chartManager.updateGraphEnabled(datum.getName(), isChecked);
+                    boolean isAllUnchecked = true;
+                    for (int i = 0; i < buttonsLayout.getChildCount(); i++) {
+                        View child = buttonsLayout.getChildAt(i);
+                        if (child instanceof Checkable && ((Checkable) child).isChecked()) {
+                            isAllUnchecked = false;
+                            break;
+                        }
+                    }
+
+                    if (isAllUnchecked) {
+                        buttonView.setChecked(true);
+                    } else {
+                        chartManager.updateGraphEnabled(datum.getName(), isChecked);
+                    }
                 }
             });
             buttonsLayout.addView(checkBox);
