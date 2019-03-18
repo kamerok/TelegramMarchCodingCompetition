@@ -5,14 +5,12 @@ import android.animation.ValueAnimator;
 import android.graphics.Path;
 import android.support.annotation.FloatRange;
 
-import com.kamer.chartapp.view.data.GraphDrawData;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawItem;
 import com.kamer.chartapp.view.data.DrawText;
 import com.kamer.chartapp.view.data.Graph;
+import com.kamer.chartapp.view.data.GraphDrawData;
 import com.kamer.chartapp.view.data.GraphItem;
-import com.kamer.chartapp.view.data.InputGraph;
-import com.kamer.chartapp.view.data.InputItem;
 import com.kamer.chartapp.view.data.PreviewDrawData;
 
 import java.util.ArrayList;
@@ -29,7 +27,6 @@ public class ChartManager {
     private PreviewView previewView;
     private UpdateListener updateListener;
 
-    private List<InputGraph> inputGraphs = new ArrayList<>();
     private List<Graph> graphs = new ArrayList<>();
 
     private float leftBorder = 0f;
@@ -50,13 +47,12 @@ public class ChartManager {
         this.updateListener = updateListener;
     }
 
-    public void setData(final List<InputGraph> data) {
+    public void setData(final List<Graph> data) {
         chartView.post(new Runnable() {
             @Override
             public void run() {
-                inputGraphs = data;
+                graphs = data;
 
-                graphs = calculateGraphs(data);
                 calculateDrawData();
                 animateZoom();
 
@@ -125,11 +121,12 @@ public class ChartManager {
     }
 
     public void updateGraphEnabled(String name, boolean isEnabled) {
-        for (int i = 0; i < inputGraphs.size(); i++) {
-            InputGraph graph = inputGraphs.get(i);
+        for (int i = 0; i < graphs.size(); i++) {
+            Graph graph = graphs.get(i);
             if (graph.getName().equals(name)) {
-                inputGraphs.set(i, new InputGraph(graph.getValues(), graph.getColor(), graph.getName(), isEnabled));
-                setData(inputGraphs);
+                graphs.set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
+                calculateDrawData();
+                animateZoom();
                 sync();
                 return;
             }
@@ -139,59 +136,7 @@ public class ChartManager {
     private void sync() {
         calculateDrawData1(graphs);
         previewView.invalidate();
-        updateListener.onUpdate(leftBorder, rightBorder, pan, inputGraphs);
-    }
-
-    private List<Graph> calculateGraphs(List<InputGraph> inputGraphs) {
-        List<Graph> result = new ArrayList<>();
-
-        List<InputItem> allItems = new ArrayList<>();
-        for (InputGraph inputGraph : inputGraphs) {
-            allItems.addAll(inputGraph.getValues());
-        }
-        if (allItems.isEmpty()) return result;
-        long[] range = calculateYRange(allItems);
-        long min = range[0];
-        long max = range[1];
-        long verticalLength = Math.abs(min - max);
-
-        for (InputGraph inputGraph : inputGraphs) {
-            List<GraphItem> items = new ArrayList<>();
-            List<InputItem> data = inputGraph.getValues();
-            for (int i = 0; i < data.size(); i++) {
-                float x = (float) i / (data.size() - 1);
-                float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
-                items.add(new GraphItem(x, y));
-            }
-            result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, inputGraph.isEnabled()));
-        }
-        return result;
-    }
-
-    private int findFirstIndexAfterPercent(float percent, List<GraphItem> items) {
-        for (int i = 0; i < items.size() - 2; i++) {
-            GraphItem current = items.get(i);
-            GraphItem next = items.get(i + 1);
-            if ((isFloatEquals(current.getX(), percent) || current.getX() < percent) && next.getX() > percent) {
-                return i + 1;
-            }
-        }
-        return -1;
-    }
-
-    private int findLastIndexBeforePercent(float percent, List<GraphItem> items) {
-        for (int i = items.size() - 1; i >= 1; i--) {
-            GraphItem current = items.get(i);
-            GraphItem previous = items.get(i - 1);
-            if ((current.getX() > percent || isFloatEquals(current.getX(), percent)) && previous.getX() < percent) {
-                return i - 1;
-            }
-        }
-        return -1;
-    }
-
-    private float calcYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
-        return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+        updateListener.onUpdate(leftBorder, rightBorder, pan, graphs);
     }
 
     private void calculateDrawData() {
@@ -429,28 +374,40 @@ public class ChartManager {
         return Math.abs(f1 - f2) < 0.00001f;
     }
 
-    private long[] calculateYRange(List<InputItem> data) {
-        long verticalMin = data.get(0).getValue();
-        long verticalMax = data.get(0).getValue();
-        for (int i = 1; i < data.size(); i++) {
-            long value = data.get(i).getValue();
-            if (value > verticalMax) {
-                verticalMax = value;
-            } else if (value < verticalMin) {
-                verticalMin = value;
-            }
-        }
-        return new long[]{verticalMin, verticalMax};
-    }
-
     private float getAlpha(String name) {
         Float animatedAlpha = alphas.get(name);
         return animatedAlpha != null ? animatedAlpha : 1f;
     }
 
+    private int findFirstIndexAfterPercent(float percent, List<GraphItem> items) {
+        for (int i = 0; i < items.size() - 2; i++) {
+            GraphItem current = items.get(i);
+            GraphItem next = items.get(i + 1);
+            if ((isFloatEquals(current.getX(), percent) || current.getX() < percent) && next.getX() > percent) {
+                return i + 1;
+            }
+        }
+        return -1;
+    }
+
+    private int findLastIndexBeforePercent(float percent, List<GraphItem> items) {
+        for (int i = items.size() - 1; i >= 1; i--) {
+            GraphItem current = items.get(i);
+            GraphItem previous = items.get(i - 1);
+            if ((current.getX() > percent || isFloatEquals(current.getX(), percent)) && previous.getX() < percent) {
+                return i - 1;
+            }
+        }
+        return -1;
+    }
+
+    private float calcYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
+        return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+    }
+
     public interface UpdateListener {
 
-        void onUpdate(float left, float right, float pan, List<InputGraph> graphs);
+        void onUpdate(float left, float right, float pan, List<Graph> graphs);
 
     }
 

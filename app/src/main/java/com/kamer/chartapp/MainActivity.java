@@ -15,8 +15,10 @@ import android.widget.SeekBar;
 import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewView;
-import com.kamer.chartapp.view.data.InputGraph;
-import com.kamer.chartapp.view.data.InputItem;
+import com.kamer.chartapp.view.data.Graph;
+import com.kamer.chartapp.data.InputGraph;
+import com.kamer.chartapp.data.InputItem;
+import com.kamer.chartapp.view.utils.DataConverter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,13 +111,13 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     }
 
     @Override
-    public void onUpdate(float left, float right, float pan, List<InputGraph> graphs) {
+    public void onUpdate(float left, float right, float pan, List<Graph> graphs) {
         leftView.setProgress((int) (left * leftView.getMax()));
         rightView.setProgress((int) (right * rightView.getMax()));
         panView.setProgress((int) (pan * panView.getMax()));
 
         buttonsLayout.removeViews(1, buttonsLayout.getChildCount() - 1);
-        for (final InputGraph datum : graphs) {
+        for (final Graph datum : graphs) {
             CheckBox checkBox = new CheckBox(this);
             checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             checkBox.setText(datum.getName());
@@ -165,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     }
 
     private void reloadData() {
-        chartManager.setData(createData());
+        chartManager.setData(DataConverter.convertInput(createData()));
     }
 
 }
