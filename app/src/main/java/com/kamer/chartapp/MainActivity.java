@@ -4,12 +4,15 @@ import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.support.v4.widget.CompoundButtonCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.Checkable;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.view.ChartManager;
@@ -102,6 +105,18 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
 
         chartManager = new ChartManager(chartView, previewView, this);
         reloadData();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Toast.makeText(this, "Change theme", Toast.LENGTH_SHORT).show();
+        return true;
     }
 
     @Override
