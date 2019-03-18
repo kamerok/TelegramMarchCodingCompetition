@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 
-public class PreviewView extends View implements AnimationListener {
+public class PreviewView extends View {
 
     private Paint paint;
     private Paint linePaint;
@@ -81,7 +81,6 @@ public class PreviewView extends View implements AnimationListener {
         );
     }
 
-    @Override
     public void onValuesUpdated(float totalMinY, float totalMaxY, Map<String, Float> alphas) {
         this.alphas = alphas;
         minY = totalMinY;
