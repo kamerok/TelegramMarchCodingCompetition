@@ -11,10 +11,13 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.Checkable;
 import android.widget.CompoundButton;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.kamer.chartapp.data.DataProvider;
+import com.kamer.chartapp.data.InputGraph;
 import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewView;
@@ -44,6 +47,26 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         rightView = findViewById(R.id.view_right_border);
         panView = findViewById(R.id.view_pan);
         buttonsLayout = findViewById(R.id.layout_buttons);
+        RadioGroup radioGroupLayout = findViewById(R.id.radio_group_layout);
+
+        List<List<InputGraph>> data = DataProvider.getData();
+        for (int i = 0; i < data.size(); i++) {
+            RadioButton radioButton = new RadioButton(this);
+            radioButton.setText("" + i);
+            final int index = i;
+            radioGroupLayout.addView(radioButton);
+            if (i == 0) {
+                radioGroupLayout.check(radioGroupLayout.getChildAt(0).getId());
+            }
+            radioButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    if (isChecked) {
+                        reloadData(index);
+                    }
+                }
+            });
+        }
 
         leftView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -104,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         });
 
         chartManager = new ChartManager(chartView, previewView, this);
-        reloadData();
+        reloadData(0);
     }
 
     @Override
@@ -125,7 +148,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         rightView.setProgress((int) (right * rightView.getMax()));
         panView.setProgress((int) (pan * panView.getMax()));
 
-        buttonsLayout.removeViews(1, buttonsLayout.getChildCount() - 1);
+        buttonsLayout.removeAllViews();
         for (final Graph datum : graphs) {
             CheckBox checkBox = new CheckBox(this);
             checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -155,12 +178,8 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         }
     }
 
-    public void onReloadClick(View view) {
-        reloadData();
-    }
-
-    private void reloadData() {
-        chartManager.setData(DataConverter.convertInput(DataProvider.getData().get(0)));
+    private void reloadData(int index) {
+        chartManager.setData(DataConverter.convertInput(DataProvider.getData().get(index)));
     }
 
 }

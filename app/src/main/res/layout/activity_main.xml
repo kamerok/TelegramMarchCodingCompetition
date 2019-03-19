@@ -7,6 +7,12 @@
     tools:context=".MainActivity"
     tools:ignore="HardcodedText">
 
+    <RadioGroup
+        android:id="@+id/radio_group_layout"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
     <com.kamer.chartapp.view.ChartView
         android:id="@+id/view_chart"
         android:layout_width="match_parent"
@@ -26,15 +32,7 @@
         android:id="@+id/layout_buttons"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/view_reload"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="onReloadClick"
-            android:text="reload" />
-    </LinearLayout>
+        android:orientation="horizontal"/>
 
 
     <TextView
