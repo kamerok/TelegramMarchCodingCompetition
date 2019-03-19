@@ -18,15 +18,13 @@
         android:layout_width="match_parent"
         android:layout_height="300dp"
         android:layout_marginTop="8dp"
-        android:background="@android:color/background_light"
         android:layerType="hardware" />
 
     <com.kamer.chartapp.view.PreviewView
         android:id="@+id/view_preview"
         android:layout_width="match_parent"
         android:layout_height="50dp"
-        android:layout_marginTop="8dp"
-        android:background="@android:color/background_light" />
+        android:layout_marginTop="8dp" />
 
     <LinearLayout
         android:id="@+id/layout_buttons"

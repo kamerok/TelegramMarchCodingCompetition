@@ -1,6 +1,11 @@
 package com.kamer.chartapp;
 
+import android.animation.ArgbEvaluator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.widget.CompoundButtonCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +19,6 @@ import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
-import android.widget.Toast;
 
 import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.data.InputGraph;
@@ -28,13 +32,23 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements ChartManager.UpdateListener {
 
+    private boolean isDarkTheme = true;
+
     private SeekBar leftView;
     private SeekBar rightView;
     private SeekBar panView;
     private ViewGroup buttonsLayout;
-
+    private RadioGroup radioGroupLayout;
 
     private ChartManager chartManager;
+
+    private Menu menu;
+
+    private ValueAnimator themeAnimator;
+    private int primaryColor;
+    private int darkColor;
+    private int backgroundColor;
+    private int textColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +61,19 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         rightView = findViewById(R.id.view_right_border);
         panView = findViewById(R.id.view_pan);
         buttonsLayout = findViewById(R.id.layout_buttons);
-        RadioGroup radioGroupLayout = findViewById(R.id.radio_group_layout);
+        radioGroupLayout = findViewById(R.id.radio_group_layout);
+
+        primaryColor = getResources().getColor(R.color.colorDarkPrimary);
+        darkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
+        backgroundColor = getResources().getColor(R.color.colorDarkBackground);
+        textColor = Color.WHITE;
 
         List<List<InputGraph>> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setText("" + i);
+            radioButton.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
+            CompoundButtonCompat.setButtonTintList(radioButton, ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
             final int index = i;
             radioGroupLayout.addView(radioButton);
             if (i == 0) {
@@ -133,13 +154,83 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+        this.menu = menu;
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Toast.makeText(this, "Change theme", Toast.LENGTH_SHORT).show();
+        isDarkTheme = !isDarkTheme;
+        updateTheme();
         return true;
+    }
+
+    private void updateTheme() {
+        int targetPrimaryColor;
+        int targetDarkColor;
+        int targetBackgroundColor;
+        int targetTextColor;
+        if (isDarkTheme) {
+            menu.getItem(0).setIcon(R.drawable.ic_brightness_7_black_24dp);
+            targetPrimaryColor = getResources().getColor(R.color.colorDarkPrimary);
+            targetDarkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
+            targetBackgroundColor = getResources().getColor(R.color.colorDarkBackground);
+            targetTextColor = Color.WHITE;
+        } else {
+            menu.getItem(0).setIcon(R.drawable.moon);
+            targetPrimaryColor = getResources().getColor(R.color.colorPrimary);
+            targetDarkColor = getResources().getColor(R.color.colorPrimaryDark);
+            targetBackgroundColor = getResources().getColor(R.color.colorBackground);
+            targetTextColor = Color.BLACK;
+        }
+
+
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[4];
+        properties[0] = PropertyValuesHolder.ofObject("primary", new ArgbEvaluator(), primaryColor, targetPrimaryColor);
+        properties[2] = PropertyValuesHolder.ofObject("primaryDark", new ArgbEvaluator(), darkColor, targetDarkColor);
+        properties[1] = PropertyValuesHolder.ofObject("background", new ArgbEvaluator(), backgroundColor, targetBackgroundColor);
+        properties[3] = PropertyValuesHolder.ofObject("text", new ArgbEvaluator(), textColor, targetTextColor);
+        if (themeAnimator != null) {
+            themeAnimator.cancel();
+        }
+        ValueAnimator animator = new ValueAnimator();
+        animator.setValues(properties);
+        animator.setDuration(100);
+
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                int newPrimaryColor = (int) valueAnimator.getAnimatedValue("primary");
+                int newDarkColor = (int) valueAnimator.getAnimatedValue("primaryDark");
+                int newBackgroundColor = (int) valueAnimator.getAnimatedValue("background");
+                int newTextColor = (int) valueAnimator.getAnimatedValue("text");
+                setColors(
+                        newPrimaryColor,
+                        newDarkColor,
+                        newBackgroundColor,
+                        newTextColor
+                );
+                primaryColor = newPrimaryColor;
+                darkColor = newDarkColor;
+                backgroundColor = newBackgroundColor;
+                textColor = newTextColor;
+            }
+        });
+        themeAnimator = animator;
+        animator.start();
+    }
+
+    private void setColors(int primaryColor, int darkColor, int backgroundColor, int textColor) {
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(primaryColor));
+        getWindow().setNavigationBarColor(primaryColor);
+        getWindow().setStatusBarColor(darkColor);
+        getWindow().setBackgroundDrawable(new ColorDrawable(backgroundColor));
+        for (int i = 0; i < buttonsLayout.getChildCount(); i++) {
+            ((CheckBox) buttonsLayout.getChildAt(i)).setTextColor(textColor);
+        }
+        for (int i = 0; i < radioGroupLayout.getChildCount(); i++) {
+            ((RadioButton) radioGroupLayout.getChildAt(i)).setTextColor(textColor);
+        }
     }
 
     @Override
@@ -154,6 +245,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
             checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             checkBox.setText(datum.getName());
             checkBox.setChecked(datum.isEnabled());
+            checkBox.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
             CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(datum.getColor()));
             checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override

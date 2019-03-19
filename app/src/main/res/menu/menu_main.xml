@@ -5,7 +5,7 @@
     <item
         android:title="Change Theme"
         android:id="@+id/action_theme"
-        android:icon="@drawable/moon"
+        android:icon="@drawable/ic_brightness_7_black_24dp"
         app:showAsAction="always"/>
 
 </menu>
