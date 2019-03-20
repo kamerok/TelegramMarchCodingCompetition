@@ -24,6 +24,7 @@ import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.data.InputGraph;
 import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
+import com.kamer.chartapp.view.PreviewMaskView;
 import com.kamer.chartapp.view.PreviewView;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.utils.DataConverter;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
 
         ChartView chartView = findViewById(R.id.view_chart);
         PreviewView previewView = findViewById(R.id.view_preview);
+        PreviewMaskView previewMaskView = findViewById(R.id.view_preview_mask);
         leftView = findViewById(R.id.view_left_border);
         rightView = findViewById(R.id.view_right_border);
         panView = findViewById(R.id.view_pan);
@@ -147,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
             }
         });
 
-        chartManager = new ChartManager(chartView, previewView, this);
+        chartManager = new ChartManager(chartView, previewView, previewMaskView, this);
         reloadData(0);
     }
 

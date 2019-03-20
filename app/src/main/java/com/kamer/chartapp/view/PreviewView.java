@@ -17,7 +17,6 @@ import com.kamer.chartapp.view.data.PreviewDrawData;
 public class PreviewView extends View {
 
     private Paint paint;
-    private Paint linePaint;
 
     private PreviewDrawData drawData;
 
@@ -60,11 +59,6 @@ public class PreviewView extends View {
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
-
-        linePaint = new Paint();
-        linePaint.setColor(Color.GRAY);
-        linePaint.setStrokeWidth(4);
-        linePaint.setAntiAlias(true);
     }
 
     private void render(Canvas canvas, PreviewDrawData drawData) {
@@ -76,16 +70,6 @@ public class PreviewView extends View {
                     paint
             );
         }
-        canvas.drawLine(
-                getWidth() * drawData.getLeftBorder(), 0,
-                getWidth() * drawData.getLeftBorder(), getHeight(),
-                linePaint
-        );
-        canvas.drawLine(
-                getWidth() * drawData.getRightBorder(), 0,
-                getWidth() * drawData.getRightBorder(), getHeight(),
-                linePaint
-        );
     }
 
 }

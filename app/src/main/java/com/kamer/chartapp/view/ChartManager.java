@@ -12,6 +12,7 @@ import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphDrawData;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.PreviewDrawData;
+import com.kamer.chartapp.view.data.PreviewMaskDrawData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ public class ChartManager {
 
     private ChartView chartView;
     private PreviewView previewView;
+    private PreviewMaskView previewMaskView;
     private UpdateListener updateListener;
 
     private List<Graph> graphs = new ArrayList<>();
@@ -41,9 +43,10 @@ public class ChartManager {
 
     private ValueAnimator currentAnimation;
 
-    public ChartManager(ChartView chartView, PreviewView previewView, UpdateListener updateListener) {
+    public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
         this.chartView = chartView;
         this.previewView = previewView;
+        this.previewMaskView = previewMaskView;
         this.updateListener = updateListener;
     }
 
@@ -252,7 +255,11 @@ public class ChartManager {
             result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
         }
 
-        previewView.setDrawData(new PreviewDrawData(result, leftBorder, rightBorder));
+        previewView.setDrawData(new PreviewDrawData(result));
+        previewMaskView.setDrawData(new PreviewMaskDrawData(
+                previewMaskView.getWidth() * leftBorder,
+                previewMaskView.getWidth() * rightBorder
+        ));
     }
 
     private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
@@ -314,6 +321,7 @@ public class ChartManager {
 
                 calculateDrawData1(graphs);
                 previewView.invalidate();
+                previewMaskView.invalidate();
             }
         });
         currentAnimation = animator;
