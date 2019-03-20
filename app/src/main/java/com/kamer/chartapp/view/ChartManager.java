@@ -3,6 +3,7 @@ package com.kamer.chartapp.view;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.graphics.Path;
+import android.util.Log;
 
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DrawGraph;
@@ -32,7 +33,6 @@ public class ChartManager {
     private UpdateListener updateListener;
 
     private Data data;
-    private List<YGuides> guides = new ArrayList<>();
 
     private float leftBorder = 0.7f;
     private float rightBorder = 1f;
@@ -77,7 +77,7 @@ public class ChartManager {
             public void run() {
                 ChartManager.this.data = data;
                 float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
-                guides.add(new YGuides(yGuides(targetRange[0], targetRange[1]), true));
+                guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
 
                 calculateDrawData();
                 animateZoom();
@@ -218,7 +218,9 @@ public class ChartManager {
         }
 
         List<DrawYGuides> drawYGuides = new ArrayList<>();
-        for (YGuides guide : guides) {
+        Log.d("TAG", "calculateDrawData: " + guideAlphas.size());
+        for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
+            YGuides guide = yGuidesFloatEntry.getKey();
             float[] yLines = new float[guide.getPercent().length * 4];
             List<DrawText> drawTexts = new ArrayList<>();
             for (int i = 0; i < guide.getPercent().length; i++) {
@@ -231,7 +233,7 @@ public class ChartManager {
                 String text = ((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue()) + "";
                 drawTexts.add(new DrawText(text, 0, y));
             }
-            drawYGuides.add(new DrawYGuides(yLines, drawTexts, 1f));
+            drawYGuides.add(new DrawYGuides(yLines, drawTexts, ((int) (yGuidesFloatEntry.getValue() * 255))));
         }
 
         chartView.setDrawData(new GraphDrawData(result, drawYGuides));
@@ -309,9 +311,20 @@ public class ChartManager {
         float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
         float[] totalRange = calculateTargetRange(0f, 1f);
         List<Graph> graphs = data.getGraphs();
+        YGuides targetGuides = new YGuides(yGuides(targetRange[0], targetRange[1]), true);
+        if (!guideAlphas.containsKey(targetGuides)) {
+            guideAlphas.put(targetGuides, 0f);
+        }
+        List<YGuides> keys = new ArrayList<>(guideAlphas.keySet());
+        for (YGuides guides : keys) {
+            if (!targetGuides.equals(guides) && guides.isActive()) {
+                float value = guideAlphas.get(guides);
+                guideAlphas.remove(guides);
+                guideAlphas.put(new YGuides(guides.getPercent(), false), value);
+            }
+        }
 
-
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 4];
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 4 + guideAlphas.size()];
         properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
         properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
         properties[2] = PropertyValuesHolder.ofFloat("totalMinY", totalMinY, totalRange[0]);
@@ -320,6 +333,11 @@ public class ChartManager {
             Graph graph = graphs.get(i);
             String name = graph.getName();
             properties[i + 4] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
+        }
+        int i = 0;
+        for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
+            properties[i + 4 + graphs.size()] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
+            i++;
         }
         if (currentAnimation != null) {
             currentAnimation.cancel();
@@ -340,6 +358,14 @@ public class ChartManager {
                     Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
                     float alpha = animatedValue != null ? (float) animatedValue : 1f;
                     newAlphas.put(graph.getName(), alpha);
+                }
+                List<YGuides> keys = new ArrayList<>(guideAlphas.keySet());
+                for (YGuides guides : keys) {
+                    float value = (float) valueAnimator.getAnimatedValue(guides.hashCode() + "");
+                    guideAlphas.remove(guides);
+                    if (!(value == 0 && !guides.isActive())) {
+                        guideAlphas.put(guides, value);
+                    }
                 }
                 minY = newMin;
                 maxY = newMax;

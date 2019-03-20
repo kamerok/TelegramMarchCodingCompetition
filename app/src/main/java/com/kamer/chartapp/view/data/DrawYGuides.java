@@ -7,9 +7,9 @@ public class DrawYGuides {
 
     private float[] yGuides;
     private List<DrawText> texts;
-    private float alpha;
+    private int alpha;
 
-    public DrawYGuides(float[] yGuides, List<DrawText> texts, float alpha) {
+    public DrawYGuides(float[] yGuides, List<DrawText> texts, int alpha) {
         this.yGuides = yGuides;
         this.texts = texts;
         this.alpha = alpha;
@@ -23,7 +23,7 @@ public class DrawYGuides {
         return texts;
     }
 
-    public float getAlpha() {
+    public int getAlpha() {
         return alpha;
     }
 

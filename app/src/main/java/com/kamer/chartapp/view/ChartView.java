@@ -80,6 +80,8 @@ public class ChartView extends View {
         List<DrawYGuides> drawYGuides = drawData.getDrawYGuides();
         for (int i = 0; i < drawYGuides.size(); i++) {
             DrawYGuides drawYGuide = drawYGuides.get(i);
+            guideLinePaint.setAlpha(drawYGuide.getAlpha());
+            textPaint.setAlpha(drawYGuide.getAlpha());
             canvas.drawLines(drawYGuide.getyGuides(), guideLinePaint);
             List<DrawText> texts = drawYGuide.getTexts();
             for (int j = 0; j < texts.size(); j++) {
