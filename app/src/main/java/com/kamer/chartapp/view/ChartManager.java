@@ -113,10 +113,10 @@ public class ChartManager {
 
     private void setRightBorder(@FloatRange(from = 0, to = 1) float rightBorder) {
         float newRight;
-        float newPan = pan;
+        float newPan;
         if (rightBorder > 1) {
             newRight = 1;
-            pan = 0;
+            newPan = 0;
         } else if (rightBorder - leftBorder < MIN_VISIBLE_PART) {
             newRight = leftBorder + MIN_VISIBLE_PART;
             newPan = 1 - newRight;
@@ -164,38 +164,50 @@ public class ChartManager {
 
         for (Graph graph : graphs) {
             List<GraphItem> graphItems = graph.getItems();
-            float startXPercentage = 1 - (visiblePartSize() + pan);
-            int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
-            float startYPercentage = calcYAtXByTwoPoints(
-                    startXPercentage,
-                    graphItems.get(firstInclusiveIndex - 1).getX(),
-                    graphItems.get(firstInclusiveIndex - 1).getY(),
-                    graphItems.get(firstInclusiveIndex).getX(),
-                    graphItems.get(firstInclusiveIndex).getY()
-            );
 
+            float startXPercentage = 1 - (visiblePartSize() + pan);
             float endXPercentage = startXPercentage + visiblePartSize();
+
+            GraphItem start = null, end = null;
+
+            int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);
             int lastInclusiveIndex = findLastIndexBeforePercent(endXPercentage, graphItems);
-            float endYPercentage = calcYAtXByTwoPoints(
-                    endXPercentage,
-                    graphItems.get(lastInclusiveIndex).getX(),
-                    graphItems.get(lastInclusiveIndex).getY(),
-                    graphItems.get(lastInclusiveIndex + 1).getX(),
-                    graphItems.get(lastInclusiveIndex + 1).getY()
-            );
+
+            if (firstInclusiveIndex > 0) {
+                float startYPercentage = calcYAtXByTwoPoints(
+                        startXPercentage,
+                        graphItems.get(firstInclusiveIndex - 1).getX(),
+                        graphItems.get(firstInclusiveIndex - 1).getY(),
+                        graphItems.get(firstInclusiveIndex).getX(),
+                        graphItems.get(firstInclusiveIndex).getY()
+                );
+                start = new GraphItem(startXPercentage, startYPercentage);
+            }
+
+            if (lastInclusiveIndex >= 0 && lastInclusiveIndex < graphItems.size() - 1) {
+                float endYPercentage = calcYAtXByTwoPoints(
+                        endXPercentage,
+                        graphItems.get(lastInclusiveIndex).getX(),
+                        graphItems.get(lastInclusiveIndex).getY(),
+                        graphItems.get(lastInclusiveIndex + 1).getX(),
+                        graphItems.get(lastInclusiveIndex + 1).getY()
+                );
+                end = new GraphItem(endXPercentage, endYPercentage);
+            }
 
             int width = chartView.getWidth();
             int height = chartView.getHeight();
 
             List<GraphItem> items = new ArrayList<>();
-            items.add(new GraphItem(startXPercentage, startYPercentage));
+            if (start != null) items.add(start);
             for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
                 items.add(graphItems.get(i));
             }
-            items.add(new GraphItem(endXPercentage, endYPercentage));
-            Path path = getPathForGraphItems(items, width, height, minY, maxY, startXPercentage, endXPercentage, PADDING_VERTICAL);
+            if (end != null) items.add(end);
 
+            Path path = getPathForGraphItems(items, width, height, minY, maxY, startXPercentage, endXPercentage, PADDING_VERTICAL);
             float alpha = getAlpha(graph.getName());
+
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
