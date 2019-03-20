@@ -6,7 +6,6 @@ import android.graphics.Path;
 import android.support.annotation.FloatRange;
 
 import com.kamer.chartapp.view.data.DrawGraph;
-import com.kamer.chartapp.view.data.DrawItem;
 import com.kamer.chartapp.view.data.DrawText;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphDrawData;
@@ -185,41 +184,17 @@ public class ChartManager {
                     graphItems.get(lastInclusiveIndex + 1).getY()
             );
 
-            List<DrawItem> drawData = new ArrayList<>();
             int width = chartView.getWidth();
             int height = chartView.getHeight();
 
-            GraphItem first = graphItems.get(firstInclusiveIndex);
-            float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
-            drawData.add(new DrawItem(
-                    0, calculateYFromPercent(height, startYPercentage, minY, maxY, PADDING_VERTICAL),
-                    (int) (newXPercent * width), calculateYFromPercent(height, first.getY(), minY, maxY, PADDING_VERTICAL)
-            ));
-
-            for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
-                GraphItem start = graphItems.get(i - 1);
-                GraphItem end = graphItems.get(i);
-                int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-                int startY = calculateYFromPercent(height, start.getY(), minY, maxY, PADDING_VERTICAL);
-                int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-                int stopY = calculateYFromPercent(height, end.getY(), minY, maxY, PADDING_VERTICAL);
-                drawData.add(new DrawItem(startX, startY, stopX, stopY));
+            List<GraphItem> items = new ArrayList<>();
+            items.add(new GraphItem(startXPercentage, startYPercentage));
+            for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
+                items.add(graphItems.get(i));
             }
+            items.add(new GraphItem(endXPercentage, endYPercentage));
+            Path path = getPathForGraphItems(items, width, height, minY, maxY, startXPercentage, endXPercentage, PADDING_VERTICAL);
 
-            GraphItem last = graphItems.get(lastInclusiveIndex);
-            newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
-            drawData.add(new DrawItem(
-                    (int) (newXPercent * width), calculateYFromPercent(height, last.getY(), minY, maxY, PADDING_VERTICAL),
-                    width, calculateYFromPercent(height, endYPercentage, minY, maxY, PADDING_VERTICAL)
-            ));
-
-            Path path = new Path();
-            for (DrawItem item : drawData) {
-                if (path.isEmpty()) {
-                    path.moveTo(item.getStartX(), item.getStartY());
-                }
-                path.lineTo(item.getStopX(), item.getStopY());
-            }
             float alpha = getAlpha(graph.getName());
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
@@ -249,27 +224,10 @@ public class ChartManager {
 
         for (Graph graph : graphs) {
             List<GraphItem> graphItems = graph.getItems();
-            List<DrawItem> drawItems = new ArrayList<>();
 
-            for (int i = 1; i < graphItems.size(); i++) {
-                GraphItem start = graphItems.get(i - 1);
-                GraphItem end = graphItems.get(i);
-                int startX = (int) (width * start.getX());
-                int startY = calculateYFromPercent(height, start.getY(), totalMinY, totalMaxY, PADDING_PREVIEW_VERTICAL);
-                int stopX = (int) (width * end.getX());
-                int stopY = calculateYFromPercent(height, end.getY(), totalMinY, totalMaxY, PADDING_PREVIEW_VERTICAL);
-                drawItems.add(new DrawItem(startX, startY, stopX, stopY));
-            }
+            Path path = getPathForGraphItems(graphItems, width, height, totalMinY, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
 
-            Path path = new Path();
-            for (DrawItem item : drawItems) {
-                if (path.isEmpty()) {
-                    path.moveTo(item.getStartX(), item.getStartY());
-                }
-                path.lineTo(item.getStopX(), item.getStopY());
-            }
             float alpha = getAlpha(graph.getName());
-
             result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
         }
 
@@ -278,6 +236,30 @@ public class ChartManager {
                 previewMaskView.getWidth() * leftBorder,
                 previewMaskView.getWidth() * rightBorder
         ));
+    }
+
+    private Path getPathForGraphItems(
+            List<GraphItem> items,
+            int width, int height,
+            float minY, float maxY,
+            float minX, float maxX,
+            int verticalPadding
+    ) {
+        Path path = new Path();
+        for (int i = 1; i < items.size(); i++) {
+            GraphItem start = items.get(i - 1);
+            GraphItem end = items.get(i);
+            int startX = (int) (width * calcPercent(start.getX(), minX, maxX));
+            int startY = calculateYFromPercent(height, start.getY(), minY, maxY, verticalPadding);
+            int stopX = (int) (width * calcPercent(end.getX(), minX, maxX));
+            int stopY = calculateYFromPercent(height, end.getY(), minY, maxY, verticalPadding);
+
+            if (path.isEmpty()) {
+                path.moveTo(startX, startY);
+            }
+            path.lineTo(stopX, stopY);
+        }
+        return path;
     }
 
     private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, int padding) {
