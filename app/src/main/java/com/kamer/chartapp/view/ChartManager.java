@@ -23,6 +23,7 @@ public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
     private static final int PADDING_VERTICAL = 50;
+    private static final int PADDING_PREVIEW_VERTICAL = 15;
 
     private ChartView chartView;
     private PreviewView previewView;
@@ -191,25 +192,25 @@ public class ChartManager {
             GraphItem first = graphItems.get(firstInclusiveIndex);
             float newXPercent = calcPercent(first.getX(), startXPercentage, endXPercentage);
             drawData.add(new DrawItem(
-                    0, calculateYFromPercent(height, startYPercentage, minY, maxY),
-                    (int) (newXPercent * width), calculateYFromPercent(height, first.getY(), minY, maxY)
+                    0, calculateYFromPercent(height, startYPercentage, minY, maxY, PADDING_VERTICAL),
+                    (int) (newXPercent * width), calculateYFromPercent(height, first.getY(), minY, maxY, PADDING_VERTICAL)
             ));
 
             for (int i = firstInclusiveIndex + 1; i <= lastInclusiveIndex; i++) {
                 GraphItem start = graphItems.get(i - 1);
                 GraphItem end = graphItems.get(i);
                 int startX = (int) (width * calcPercent(start.getX(), startXPercentage, endXPercentage));
-                int startY = calculateYFromPercent(height, start.getY(), minY, maxY);
+                int startY = calculateYFromPercent(height, start.getY(), minY, maxY, PADDING_VERTICAL);
                 int stopX = (int) (width * calcPercent(end.getX(), startXPercentage, endXPercentage));
-                int stopY = calculateYFromPercent(height, end.getY(), minY, maxY);
+                int stopY = calculateYFromPercent(height, end.getY(), minY, maxY, PADDING_VERTICAL);
                 drawData.add(new DrawItem(startX, startY, stopX, stopY));
             }
 
             GraphItem last = graphItems.get(lastInclusiveIndex);
             newXPercent = calcPercent(last.getX(), startXPercentage, endXPercentage);
             drawData.add(new DrawItem(
-                    (int) (newXPercent * width), calculateYFromPercent(height, last.getY(), minY, maxY),
-                    width, calculateYFromPercent(height, endYPercentage, minY, maxY)
+                    (int) (newXPercent * width), calculateYFromPercent(height, last.getY(), minY, maxY, PADDING_VERTICAL),
+                    width, calculateYFromPercent(height, endYPercentage, minY, maxY, PADDING_VERTICAL)
             ));
 
             Path path = new Path();
@@ -254,9 +255,9 @@ public class ChartManager {
                 GraphItem start = graphItems.get(i - 1);
                 GraphItem end = graphItems.get(i);
                 int startX = (int) (width * start.getX());
-                int startY = (int) (height - height * calcPercent(start.getY(), totalMinY, totalMaxY));
+                int startY = calculateYFromPercent(height, start.getY(), totalMinY, totalMaxY, PADDING_PREVIEW_VERTICAL);
                 int stopX = (int) (width * end.getX());
-                int stopY = (int) (height - height * calcPercent(end.getY(), totalMinY, totalMaxY));
+                int stopY = calculateYFromPercent(height, end.getY(), totalMinY, totalMaxY, PADDING_PREVIEW_VERTICAL);
                 drawItems.add(new DrawItem(startX, startY, stopX, stopY));
             }
 
@@ -279,9 +280,9 @@ public class ChartManager {
         ));
     }
 
-    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
-        int heightWithPadding = height - PADDING_VERTICAL * 2;
-        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + PADDING_VERTICAL;
+    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, int padding) {
+        int heightWithPadding = height - padding * 2;
+        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + padding;
     }
 
     private float visiblePartSize() {
