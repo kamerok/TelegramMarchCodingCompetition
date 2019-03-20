@@ -1,38 +1,30 @@
 package com.kamer.chartapp.view.data;
 
-import java.util.Arrays;
 import java.util.List;
 
 public class GraphDrawData {
 
     private List<DrawGraph> drawGraphs;
-    private float[] yGuides;
-    private List<DrawText> texts;
+    private List<DrawYGuides> drawYGuides;
 
-    public GraphDrawData(List<DrawGraph> drawGraphs, float[] yGuides, List<DrawText> texts) {
+    public GraphDrawData(List<DrawGraph> drawGraphs, List<DrawYGuides> drawYGuides) {
         this.drawGraphs = drawGraphs;
-        this.yGuides = yGuides;
-        this.texts = texts;
+        this.drawYGuides = drawYGuides;
     }
 
     public List<DrawGraph> getDrawGraphs() {
         return drawGraphs;
     }
 
-    public float[] getYGuides() {
-        return yGuides;
-    }
-
-    public List<DrawText> getTexts() {
-        return texts;
+    public List<DrawYGuides> getDrawYGuides() {
+        return drawYGuides;
     }
 
     @Override
     public String toString() {
-        return "DrawData{" +
+        return "GraphDrawData{" +
                 "drawGraphs=" + drawGraphs +
-                ", yGuides=" + Arrays.toString(yGuides) +
-                ", texts=" + texts +
+                ", drawYGuides=" + drawYGuides +
                 '}';
     }
 }

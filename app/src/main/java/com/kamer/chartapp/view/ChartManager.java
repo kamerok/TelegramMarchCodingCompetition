@@ -7,11 +7,13 @@ import android.graphics.Path;
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawText;
+import com.kamer.chartapp.view.data.DrawYGuides;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphDrawData;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.PreviewDrawData;
 import com.kamer.chartapp.view.data.PreviewMaskDrawData;
+import com.kamer.chartapp.view.data.YGuides;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,12 +32,14 @@ public class ChartManager {
     private UpdateListener updateListener;
 
     private Data data;
+    private List<YGuides> guides = new ArrayList<>();
 
     private float leftBorder = 0.7f;
     private float rightBorder = 1f;
     private float pan = 0f;
 
     private Map<String, Float> alphas = new HashMap<>();
+    private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float minY;
     private float maxY = 1;
     private float totalMinY;
@@ -72,6 +76,8 @@ public class ChartManager {
             @Override
             public void run() {
                 ChartManager.this.data = data;
+                float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
+                guides.add(new YGuides(yGuides(targetRange[0], targetRange[1]), true));
 
                 calculateDrawData();
                 animateZoom();
@@ -211,22 +217,24 @@ public class ChartManager {
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
-        float[] guides = yGuides(minY, maxY);
+        List<DrawYGuides> drawYGuides = new ArrayList<>();
+        for (YGuides guide : guides) {
+            float[] yLines = new float[guide.getPercent().length * 4];
+            List<DrawText> drawTexts = new ArrayList<>();
+            for (int i = 0; i < guide.getPercent().length; i++) {
+                float y = chartView.getHeight() - chartView.getHeight() * calcPercent(guide.getPercent()[i], minY, maxY);
+                yLines[i * 4] = 0;
+                yLines[i * 4 + 1] = y;
+                yLines[i * 4 + 2] = chartView.getWidth();
+                yLines[i * 4 + 3] = y;
 
-        float[] yLines = new float[guides.length * 4];
-        List<DrawText> drawTexts = new ArrayList<>();
-        for (int i = 0; i < guides.length; i++) {
-            float y = chartView.getHeight() - chartView.getHeight() * calcPercent(guides[i], minY, maxY);
-            yLines[i * 4] = 0;
-            yLines[i * 4 + 1] = y;
-            yLines[i * 4 + 2] = chartView.getWidth();
-            yLines[i * 4 + 3] = y;
-
-            String text = ((data.getMaxValue() - data.getMinValue()) * guides[i] + data.getMinValue()) + "";
-            drawTexts.add(new DrawText(text, 0, y));
+                String text = ((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue()) + "";
+                drawTexts.add(new DrawText(text, 0, y));
+            }
+            drawYGuides.add(new DrawYGuides(yLines, drawTexts, 1f));
         }
 
-        chartView.setDrawData(new GraphDrawData(result, yLines, drawTexts));
+        chartView.setDrawData(new GraphDrawData(result, drawYGuides));
     }
 
     private float[] yGuides(float minY, float maxY) {

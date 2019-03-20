@@ -9,6 +9,7 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.kamer.chartapp.view.data.DrawYGuides;
 import com.kamer.chartapp.view.data.GraphDrawData;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawText;
@@ -76,11 +77,15 @@ public class ChartView extends View {
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
-        canvas.drawLines(drawData.getYGuides(), guideLinePaint);
-        List<DrawText> texts = drawData.getTexts();
-        for (int i = 0; i < texts.size(); i++) {
-            DrawText text = texts.get(i);
-            canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
+        List<DrawYGuides> drawYGuides = drawData.getDrawYGuides();
+        for (int i = 0; i < drawYGuides.size(); i++) {
+            DrawYGuides drawYGuide = drawYGuides.get(i);
+            canvas.drawLines(drawYGuide.getyGuides(), guideLinePaint);
+            List<DrawText> texts = drawYGuide.getTexts();
+            for (int j = 0; j < texts.size(); j++) {
+                DrawText text = texts.get(j);
+                canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
+            }
         }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
             DrawGraph graph = drawData.getDrawGraphs().get(i);

@@ -1,11 +1,10 @@
 package com.kamer.chartapp.view.data;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Data {
 
-    private List<Graph> graphs = new ArrayList<>();
+    private List<Graph> graphs;
     private long minValue;
     private long maxValue;
 
