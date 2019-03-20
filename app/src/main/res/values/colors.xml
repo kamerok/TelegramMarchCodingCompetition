@@ -10,6 +10,8 @@
     <color name="colorDarkPrimaryDark">#161C23</color>
     <color name="colorDarkBackground">#171E27</color>
 
-    <color name="colorOverlay">#99CCD9E4</color>
-    <color name="colorFrame">#331B7ABE</color>
+    <color name="colorDarkOverlay">#A11B232D</color>
+    <color name="colorDarkFrame">#734A7194</color>
+    <color name="colorOverlay">#99E1E9E9</color>
+    <color name="colorFrame">#73B5CFE4</color>
 </resources>

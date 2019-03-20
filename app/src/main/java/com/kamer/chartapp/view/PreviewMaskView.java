@@ -107,17 +107,26 @@ public class PreviewMaskView extends View {
         this.drawData = drawData;
     }
 
+    public void setColors(int overlayColor, int frameColor) {
+        initPaints(overlayColor, frameColor);
+        invalidate();
+    }
+
     public void setListener(Listener listener) {
         this.listener = listener;
     }
 
     private void init() {
+        initPaints(getResources().getColor(R.color.colorDarkOverlay), getResources().getColor(R.color.colorDarkFrame));
+    }
+
+    private void initPaints(int overlayColor, int frameColor) {
         overlayPaint = new Paint();
-        overlayPaint.setColor(getResources().getColor(R.color.colorOverlay));
+        overlayPaint.setColor(overlayColor);
         overlayPaint.setStyle(Paint.Style.FILL);
 
         framePaint = new Paint();
-        framePaint.setColor(getResources().getColor(R.color.colorFrame));
+        framePaint.setColor(frameColor);
         framePaint.setStyle(Paint.Style.FILL);
     }
 

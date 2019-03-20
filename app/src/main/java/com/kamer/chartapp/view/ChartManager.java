@@ -32,7 +32,7 @@ public class ChartManager {
 
     private List<Graph> graphs = new ArrayList<>();
 
-    private float leftBorder = 0f;
+    private float leftBorder = 0.7f;
     private float rightBorder = 1f;
     private float pan = 0f;
 
@@ -155,7 +155,7 @@ public class ChartManager {
     }
 
     private void sync() {
-        calculateDrawData1(graphs);
+        calculatePreviewDrawData(graphs);
         previewView.invalidate();
         updateListener.onUpdate(graphs);
     }
@@ -242,7 +242,7 @@ public class ChartManager {
         chartView.setDrawData(new GraphDrawData(result, yLines, drawTexts));
     }
 
-    private void calculateDrawData1(List<Graph> graphs) {
+    private void calculatePreviewDrawData(List<Graph> graphs) {
         List<DrawGraph> result = new ArrayList<>();
         int width = previewView.getWidth();
         int height = previewView.getHeight();
@@ -337,7 +337,7 @@ public class ChartManager {
                 calculateDrawData();
                 chartView.invalidate();
 
-                calculateDrawData1(graphs);
+                calculatePreviewDrawData(graphs);
                 previewView.invalidate();
                 previewMaskView.invalidate();
             }

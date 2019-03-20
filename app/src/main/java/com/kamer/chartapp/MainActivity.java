@@ -18,7 +18,6 @@ import android.widget.Checkable;
 import android.widget.CompoundButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.SeekBar;
 
 import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.data.InputGraph;
@@ -39,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     private RadioGroup radioGroupLayout;
 
     private ChartManager chartManager;
+    private PreviewMaskView previewMaskView;
 
     private Menu menu;
 
@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     private int darkColor;
     private int backgroundColor;
     private int textColor;
+    private int overlayColor;
+    private int frameColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
 
         ChartView chartView = findViewById(R.id.view_chart);
         PreviewView previewView = findViewById(R.id.view_preview);
-        PreviewMaskView previewMaskView = findViewById(R.id.view_preview_mask);
+        previewMaskView = findViewById(R.id.view_preview_mask);
         buttonsLayout = findViewById(R.id.layout_buttons);
         radioGroupLayout = findViewById(R.id.radio_group_layout);
 
@@ -63,6 +65,8 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         darkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
         backgroundColor = getResources().getColor(R.color.colorDarkBackground);
         textColor = Color.WHITE;
+        overlayColor = getResources().getColor(R.color.colorDarkOverlay);
+        frameColor = getResources().getColor(R.color.colorDarkFrame);
 
         List<List<InputGraph>> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
@@ -108,26 +112,34 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         int targetDarkColor;
         int targetBackgroundColor;
         int targetTextColor;
+        int targetOverlayColor;
+        int targetFrameColor;
         if (isDarkTheme) {
             menu.getItem(0).setIcon(R.drawable.ic_brightness_7_black_24dp);
             targetPrimaryColor = getResources().getColor(R.color.colorDarkPrimary);
             targetDarkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
             targetBackgroundColor = getResources().getColor(R.color.colorDarkBackground);
             targetTextColor = Color.WHITE;
+            targetOverlayColor = getResources().getColor(R.color.colorDarkOverlay);
+            targetFrameColor = getResources().getColor(R.color.colorDarkFrame);
         } else {
             menu.getItem(0).setIcon(R.drawable.moon);
             targetPrimaryColor = getResources().getColor(R.color.colorPrimary);
             targetDarkColor = getResources().getColor(R.color.colorPrimaryDark);
             targetBackgroundColor = getResources().getColor(R.color.colorBackground);
             targetTextColor = Color.BLACK;
+            targetOverlayColor = getResources().getColor(R.color.colorOverlay);
+            targetFrameColor = getResources().getColor(R.color.colorFrame);
         }
 
 
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[4];
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[6];
         properties[0] = PropertyValuesHolder.ofObject("primary", new ArgbEvaluator(), primaryColor, targetPrimaryColor);
-        properties[2] = PropertyValuesHolder.ofObject("primaryDark", new ArgbEvaluator(), darkColor, targetDarkColor);
-        properties[1] = PropertyValuesHolder.ofObject("background", new ArgbEvaluator(), backgroundColor, targetBackgroundColor);
+        properties[1] = PropertyValuesHolder.ofObject("primaryDark", new ArgbEvaluator(), darkColor, targetDarkColor);
+        properties[2] = PropertyValuesHolder.ofObject("background", new ArgbEvaluator(), backgroundColor, targetBackgroundColor);
         properties[3] = PropertyValuesHolder.ofObject("text", new ArgbEvaluator(), textColor, targetTextColor);
+        properties[4] = PropertyValuesHolder.ofObject("overlay", new ArgbEvaluator(), overlayColor, targetOverlayColor);
+        properties[5] = PropertyValuesHolder.ofObject("frame", new ArgbEvaluator(), frameColor, targetFrameColor);
         if (themeAnimator != null) {
             themeAnimator.cancel();
         }
@@ -142,16 +154,21 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
                 int newDarkColor = (int) valueAnimator.getAnimatedValue("primaryDark");
                 int newBackgroundColor = (int) valueAnimator.getAnimatedValue("background");
                 int newTextColor = (int) valueAnimator.getAnimatedValue("text");
+                int newOverlayColor = (int) valueAnimator.getAnimatedValue("overlay");
+                int newFrameColor = (int) valueAnimator.getAnimatedValue("frame");
                 setColors(
                         newPrimaryColor,
                         newDarkColor,
                         newBackgroundColor,
                         newTextColor
                 );
+                previewMaskView.setColors(newOverlayColor, newFrameColor);
                 primaryColor = newPrimaryColor;
                 darkColor = newDarkColor;
                 backgroundColor = newBackgroundColor;
                 textColor = newTextColor;
+                overlayColor = newOverlayColor;
+                frameColor = newFrameColor;
             }
         });
         themeAnimator = animator;
