@@ -3,7 +3,6 @@ package com.kamer.chartapp.view;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.graphics.Path;
-import android.support.annotation.FloatRange;
 
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawText;
@@ -94,7 +93,7 @@ public class ChartManager {
         }
     }
 
-    private void setLeftBorder(@FloatRange(from = 0, to = 1) float leftBorder) {
+    private void setLeftBorder(float leftBorder) {
         float newLeft = leftBorder;
         float newVisiblePart = rightBorder - leftBorder;
         if (newVisiblePart + pan > 1) {
@@ -111,7 +110,7 @@ public class ChartManager {
         sync();
     }
 
-    private void setRightBorder(@FloatRange(from = 0, to = 1) float rightBorder) {
+    private void setRightBorder(float rightBorder) {
         float newRight;
         float newPan;
         if (rightBorder > 1) {
@@ -134,7 +133,7 @@ public class ChartManager {
         sync();
     }
 
-    private void setPan(@FloatRange(from = 0, to = 1) float pan) {
+    private void setPan(float pan) {
         float newPan = pan;
         if (visiblePartSize() + newPan > 1) {
             newPan = 1 - visiblePartSize();

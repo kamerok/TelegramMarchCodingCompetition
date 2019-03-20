@@ -5,7 +5,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Build;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,18 +35,18 @@ public class PreviewMaskView extends View {
         init();
     }
 
-    public PreviewMaskView(Context context, @Nullable AttributeSet attrs) {
+    public PreviewMaskView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public PreviewMaskView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public PreviewMaskView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public PreviewMaskView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public PreviewMaskView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }

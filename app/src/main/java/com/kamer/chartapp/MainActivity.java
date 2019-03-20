@@ -3,12 +3,11 @@ package com.kamer.chartapp;
 import android.animation.ArgbEvaluator;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.support.v4.widget.CompoundButtonCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,7 +29,7 @@ import com.kamer.chartapp.view.utils.DataConverter;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements ChartManager.UpdateListener {
+public class MainActivity extends Activity implements ChartManager.UpdateListener {
 
     private boolean isDarkTheme = true;
 
@@ -68,12 +67,14 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         overlayColor = getResources().getColor(R.color.colorDarkOverlay);
         frameColor = getResources().getColor(R.color.colorDarkFrame);
 
+        setColors(primaryColor, darkColor, backgroundColor, textColor);
+
         List<List<InputGraph>> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setText("" + i);
             radioButton.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
-            CompoundButtonCompat.setButtonTintList(radioButton, ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
+            radioButton.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
             final int index = i;
             radioGroupLayout.addView(radioButton);
             if (i == 0) {
@@ -176,7 +177,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     }
 
     private void setColors(int primaryColor, int darkColor, int backgroundColor, int textColor) {
-        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(primaryColor));
+        getActionBar().setBackgroundDrawable(new ColorDrawable(primaryColor));
         getWindow().setNavigationBarColor(primaryColor);
         getWindow().setStatusBarColor(darkColor);
         getWindow().setBackgroundDrawable(new ColorDrawable(backgroundColor));
@@ -197,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
             checkBox.setText(datum.getName());
             checkBox.setChecked(datum.isEnabled());
             checkBox.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
-            CompoundButtonCompat.setButtonTintList(checkBox, ColorStateList.valueOf(datum.getColor()));
+            checkBox.setButtonTintList(ColorStateList.valueOf(datum.getColor()));
             checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

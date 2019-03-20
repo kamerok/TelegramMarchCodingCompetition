@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Build;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -25,18 +24,18 @@ public class PreviewView extends View {
         init();
     }
 
-    public PreviewView(Context context, @Nullable AttributeSet attrs) {
+    public PreviewView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public PreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public PreviewView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public PreviewView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public PreviewView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
