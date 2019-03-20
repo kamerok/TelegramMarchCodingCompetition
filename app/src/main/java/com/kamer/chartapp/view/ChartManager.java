@@ -21,7 +21,7 @@ import java.util.Map;
 
 public class ChartManager {
 
-    private static final float MIN_VISIBLE_PART = 0.1f;
+    private static final float MIN_VISIBLE_PART = 0.2f;
     private static final int PADDING_VERTICAL = 50;
 
     private ChartView chartView;
@@ -48,6 +48,23 @@ public class ChartManager {
         this.previewView = previewView;
         this.previewMaskView = previewMaskView;
         this.updateListener = updateListener;
+
+        previewMaskView.setListener(new PreviewMaskView.Listener() {
+            @Override
+            public void onLeftBorderChanged(float dX) {
+                setLeftBorder(leftBorder + dX);
+            }
+
+            @Override
+            public void onRightBorderChanged(float dX) {
+                setRightBorder(rightBorder + dX);
+            }
+
+            @Override
+            public void onPanChanged(float dX) {
+                setPan(pan + dX);
+            }
+        });
     }
 
     public void setData(final List<Graph> data) {
@@ -64,7 +81,20 @@ public class ChartManager {
         });
     }
 
-    public void setLeftBorder(@FloatRange(from = 0, to = 1) float leftBorder) {
+    public void updateGraphEnabled(String name, boolean isEnabled) {
+        for (int i = 0; i < graphs.size(); i++) {
+            Graph graph = graphs.get(i);
+            if (graph.getName().equals(name)) {
+                graphs.set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
+                calculateDrawData();
+                animateZoom();
+                sync();
+                return;
+            }
+        }
+    }
+
+    private void setLeftBorder(@FloatRange(from = 0, to = 1) float leftBorder) {
         float newLeft = leftBorder;
         float newVisiblePart = rightBorder - leftBorder;
         if (newVisiblePart + pan > 1) {
@@ -81,7 +111,7 @@ public class ChartManager {
         sync();
     }
 
-    public void setRightBorder(@FloatRange(from = 0, to = 1) float rightBorder) {
+    private void setRightBorder(@FloatRange(from = 0, to = 1) float rightBorder) {
         float newRight;
         float newPan = pan;
         if (rightBorder > 1) {
@@ -104,7 +134,7 @@ public class ChartManager {
         sync();
     }
 
-    public void setPan(@FloatRange(from = 0, to = 1) float pan) {
+    private void setPan(@FloatRange(from = 0, to = 1) float pan) {
         float newPan = pan;
         if (visiblePartSize() + newPan > 1) {
             newPan = 1 - visiblePartSize();
@@ -123,23 +153,10 @@ public class ChartManager {
         sync();
     }
 
-    public void updateGraphEnabled(String name, boolean isEnabled) {
-        for (int i = 0; i < graphs.size(); i++) {
-            Graph graph = graphs.get(i);
-            if (graph.getName().equals(name)) {
-                graphs.set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
-                calculateDrawData();
-                animateZoom();
-                sync();
-                return;
-            }
-        }
-    }
-
     private void sync() {
         calculateDrawData1(graphs);
         previewView.invalidate();
-        updateListener.onUpdate(leftBorder, rightBorder, pan, graphs);
+        updateListener.onUpdate(graphs);
     }
 
     private void calculateDrawData() {
@@ -415,7 +432,7 @@ public class ChartManager {
 
     public interface UpdateListener {
 
-        void onUpdate(float left, float right, float pan, List<Graph> graphs);
+        void onUpdate(List<Graph> graphs);
 
     }
 

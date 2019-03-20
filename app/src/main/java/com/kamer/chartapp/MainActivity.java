@@ -35,9 +35,6 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
 
     private boolean isDarkTheme = true;
 
-    private SeekBar leftView;
-    private SeekBar rightView;
-    private SeekBar panView;
     private ViewGroup buttonsLayout;
     private RadioGroup radioGroupLayout;
 
@@ -59,9 +56,6 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
         ChartView chartView = findViewById(R.id.view_chart);
         PreviewView previewView = findViewById(R.id.view_preview);
         PreviewMaskView previewMaskView = findViewById(R.id.view_preview_mask);
-        leftView = findViewById(R.id.view_left_border);
-        rightView = findViewById(R.id.view_right_border);
-        panView = findViewById(R.id.view_pan);
         buttonsLayout = findViewById(R.id.layout_buttons);
         radioGroupLayout = findViewById(R.id.radio_group_layout);
 
@@ -90,64 +84,6 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
                 }
             });
         }
-
-        leftView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    float newValue = progress / ((float) seekBar.getMax());
-                    chartManager.setLeftBorder(newValue);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        rightView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    float newValue = progress / ((float) seekBar.getMax());
-                    chartManager.setRightBorder(newValue);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-        panView.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    float newValue = progress / ((float) seekBar.getMax());
-                    chartManager.setPan(newValue);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
 
         chartManager = new ChartManager(chartView, previewView, previewMaskView, this);
         reloadData(0);
@@ -236,11 +172,7 @@ public class MainActivity extends AppCompatActivity implements ChartManager.Upda
     }
 
     @Override
-    public void onUpdate(float left, float right, float pan, List<Graph> graphs) {
-        leftView.setProgress((int) (left * leftView.getMax()));
-        rightView.setProgress((int) (right * rightView.getMax()));
-        panView.setProgress((int) (pan * panView.getMax()));
-
+    public void onUpdate(List<Graph> graphs) {
         buttonsLayout.removeAllViews();
         for (final Graph datum : graphs) {
             CheckBox checkBox = new CheckBox(this);
