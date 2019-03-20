@@ -2,6 +2,7 @@ package com.kamer.chartapp.view.utils;
 
 import com.kamer.chartapp.data.InputGraph;
 import com.kamer.chartapp.data.InputItem;
+import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 
@@ -10,14 +11,14 @@ import java.util.List;
 
 public class DataConverter {
 
-    public static List<Graph> convertInput(List<InputGraph> inputGraphs) {
+    public static Data convertInput(List<InputGraph> inputGraphs) {
         List<Graph> result = new ArrayList<>();
 
         List<InputItem> allItems = new ArrayList<>();
         for (InputGraph inputGraph : inputGraphs) {
             allItems.addAll(inputGraph.getValues());
         }
-        if (allItems.isEmpty()) return result;
+        if (allItems.isEmpty()) return new Data(result, 0, 0);
         long[] range = calculateYRange(allItems);
         long min = range[0];
         long max = range[1];
@@ -33,7 +34,7 @@ public class DataConverter {
             }
             result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
         }
-        return result;
+        return new Data(result, min, max);
     }
 
     private static long[] calculateYRange(List<InputItem> data) {

@@ -4,6 +4,7 @@ import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.graphics.Path;
 
+import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawText;
 import com.kamer.chartapp.view.data.Graph;
@@ -28,7 +29,7 @@ public class ChartManager {
     private PreviewMaskView previewMaskView;
     private UpdateListener updateListener;
 
-    private List<Graph> graphs = new ArrayList<>();
+    private Data data;
 
     private float leftBorder = 0.7f;
     private float rightBorder = 1f;
@@ -66,11 +67,11 @@ public class ChartManager {
         });
     }
 
-    public void setData(final List<Graph> data) {
+    public void setData(final Data data) {
         chartView.post(new Runnable() {
             @Override
             public void run() {
-                graphs = data;
+                ChartManager.this.data = data;
 
                 calculateDrawData();
                 animateZoom();
@@ -81,10 +82,10 @@ public class ChartManager {
     }
 
     public void updateGraphEnabled(String name, boolean isEnabled) {
-        for (int i = 0; i < graphs.size(); i++) {
-            Graph graph = graphs.get(i);
+        for (int i = 0; i < data.getGraphs().size(); i++) {
+            Graph graph = data.getGraphs().get(i);
             if (graph.getName().equals(name)) {
-                graphs.set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
+                data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
                 calculateDrawData();
                 animateZoom();
                 sync();
@@ -153,15 +154,15 @@ public class ChartManager {
     }
 
     private void sync() {
-        calculatePreviewDrawData(graphs);
+        calculatePreviewDrawData(data.getGraphs());
         previewView.invalidate();
-        updateListener.onUpdate(graphs);
+        updateListener.onUpdate(data.getGraphs());
     }
 
     private void calculateDrawData() {
         ArrayList<DrawGraph> result = new ArrayList<>();
 
-        for (Graph graph : graphs) {
+        for (Graph graph : data.getGraphs()) {
             List<GraphItem> graphItems = graph.getItems();
 
             float startXPercentage = 1 - (visiblePartSize() + pan);
@@ -210,22 +211,32 @@ public class ChartManager {
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
-        float[] yLines = new float[6 * 4];
+        float[] guides = yGuides(minY, maxY);
+
+        float[] yLines = new float[guides.length * 4];
         List<DrawText> drawTexts = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
-            float segment = Math.abs(maxY - minY) / 6;
-            float percent = 1 - calcPercent(((segment) * i + minY), minY, maxY);
-            float y = chartView.getHeight() * percent;
+        for (int i = 0; i < guides.length; i++) {
+            float y = chartView.getHeight() - chartView.getHeight() * calcPercent(guides[i], minY, maxY);
             yLines[i * 4] = 0;
             yLines[i * 4 + 1] = y;
             yLines[i * 4 + 2] = chartView.getWidth();
             yLines[i * 4 + 3] = y;
 
-            float realPercent = 1 - percent;
-            drawTexts.add(new DrawText(realPercent + "", 0, y));
+            String text = ((data.getMaxValue() - data.getMinValue()) * guides[i] + data.getMinValue()) + "";
+            drawTexts.add(new DrawText(text, 0, y));
         }
 
         chartView.setDrawData(new GraphDrawData(result, yLines, drawTexts));
+    }
+
+    private float[] yGuides(float minY, float maxY) {
+        int count = 6;
+        float[] guides = new float[count];
+        float segment = Math.abs(maxY - minY) / count;
+        for (int i = 0; i < count; i++) {
+            guides[i] = segment * i + minY + segment / 2;
+        }
+        return guides;
     }
 
     private void calculatePreviewDrawData(List<Graph> graphs) {
@@ -289,6 +300,7 @@ public class ChartManager {
     private void animateZoom() {
         float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
         float[] totalRange = calculateTargetRange(0f, 1f);
+        List<Graph> graphs = data.getGraphs();
 
 
         PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 4];
@@ -316,7 +328,7 @@ public class ChartManager {
                 float newTotalMin = (float) valueAnimator.getAnimatedValue("totalMinY");
                 float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
                 HashMap<String, Float> newAlphas = new HashMap<>();
-                for (Graph graph : graphs) {
+                for (Graph graph : data.getGraphs()) {
                     Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
                     float alpha = animatedValue != null ? (float) animatedValue : 1f;
                     newAlphas.put(graph.getName(), alpha);
@@ -330,7 +342,7 @@ public class ChartManager {
                 calculateDrawData();
                 chartView.invalidate();
 
-                calculatePreviewDrawData(graphs);
+                calculatePreviewDrawData(data.getGraphs());
                 previewView.invalidate();
                 previewMaskView.invalidate();
             }
@@ -343,7 +355,7 @@ public class ChartManager {
         float yMin = 1;
         float yMax = 0;
 
-        for (Graph graph : graphs) {
+        for (Graph graph : data.getGraphs()) {
             if (!graph.isEnabled()) continue;
             List<GraphItem> graphItems = graph.getItems();
             int firstInclusiveIndex = findFirstIndexAfterPercent(startXPercentage, graphItems);

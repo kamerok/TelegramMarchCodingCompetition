@@ -76,12 +76,12 @@ public class ChartView extends View {
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
-        /*canvas.drawLines(drawData.getYGuides(), guideLinePaint);
+        canvas.drawLines(drawData.getYGuides(), guideLinePaint);
         List<DrawText> texts = drawData.getTexts();
         for (int i = 0; i < texts.size(); i++) {
             DrawText text = texts.get(i);
             canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
-        }*/
+        }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
             DrawGraph graph = drawData.getDrawGraphs().get(i);
             paint.setColor(graph.getColor());
