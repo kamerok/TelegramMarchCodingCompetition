@@ -19,7 +19,7 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 
 import com.kamer.chartapp.data.DataProvider;
-import com.kamer.chartapp.data.InputGraph;
+import com.kamer.chartapp.data.InputData;
 import com.kamer.chartapp.view.ChartManager;
 import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewMaskView;
@@ -69,7 +69,7 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
 
         setColors(primaryColor, darkColor, backgroundColor, textColor);
 
-        List<List<InputGraph>> data = DataProvider.getData();
+        List<InputData> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setText("" + i);

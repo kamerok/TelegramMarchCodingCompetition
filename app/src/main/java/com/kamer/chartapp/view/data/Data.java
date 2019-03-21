@@ -5,17 +5,23 @@ import java.util.List;
 public class Data {
 
     private List<Graph> graphs;
+    private List<DatePoint> datePoints;
     private long minValue;
     private long maxValue;
 
-    public Data(List<Graph> graphs, long minValue, long maxValue) {
+    public Data(List<Graph> graphs, List<DatePoint> datePoints, long minValue, long maxValue) {
         this.graphs = graphs;
+        this.datePoints = datePoints;
         this.minValue = minValue;
         this.maxValue = maxValue;
     }
 
     public List<Graph> getGraphs() {
         return graphs;
+    }
+
+    public List<DatePoint> getDatePoints() {
+        return datePoints;
     }
 
     public long getMinValue() {
@@ -30,6 +36,7 @@ public class Data {
     public String toString() {
         return "Data{" +
                 "graphs=" + graphs +
+                ", datePoints=" + datePoints +
                 ", minValue=" + minValue +
                 ", maxValue=" + maxValue +
                 '}';

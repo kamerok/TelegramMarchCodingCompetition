@@ -1,20 +1,20 @@
 package com.kamer.chartapp.data;
 
-import java.util.List;
+import java.util.Arrays;
 
 public class InputGraph {
 
-    private List<InputItem> values;
+    private long[] values;
     private int color;
     private String name;
 
-    public InputGraph(List<InputItem> values, int color, String name) {
+    public InputGraph(long[] values, int color, String name) {
         this.values = values;
         this.color = color;
         this.name = name;
     }
 
-    public List<InputItem> getValues() {
+    public long[] getValues() {
         return values;
     }
 
@@ -29,7 +29,7 @@ public class InputGraph {
     @Override
     public String toString() {
         return "InputGraph{" +
-                "values=" + values +
+                "values=" + Arrays.toString(values) +
                 ", color=" + color +
                 ", name='" + name + '\'' +
                 '}';

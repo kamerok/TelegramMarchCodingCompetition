@@ -1,54 +1,55 @@
 package com.kamer.chartapp.view.utils;
 
+import com.kamer.chartapp.data.InputData;
 import com.kamer.chartapp.data.InputGraph;
-import com.kamer.chartapp.data.InputItem;
 import com.kamer.chartapp.view.data.Data;
+import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class DataConverter {
 
-    public static Data convertInput(List<InputGraph> inputGraphs) {
-        List<Graph> result = new ArrayList<>();
+    private static final SimpleDateFormat format = new SimpleDateFormat("MMM d", Locale.ENGLISH);
 
-        List<InputItem> allItems = new ArrayList<>();
-        for (InputGraph inputGraph : inputGraphs) {
-            allItems.addAll(inputGraph.getValues());
+    public static Data convertInput(InputData inputData) {
+
+        long minX = inputData.getTimestamps()[0];
+        long maxX = inputData.getTimestamps()[inputData.getTimestamps().length - 1];
+        long dateLength = Math.abs(minX - maxX);
+        List<DatePoint> datePoints = new ArrayList<>();
+        for (long timestamp : inputData.getTimestamps()) {
+            float percent = (timestamp - minX) / (float) dateLength;
+            datePoints.add(new DatePoint(percent, timestamp, format.format(timestamp)));
         }
-        if (allItems.isEmpty()) return new Data(result, 0, 0);
-        long[] range = calculateYRange(allItems);
-        long min = range[0];
-        long max = range[1];
-        long verticalLength = Math.abs(min - max);
 
-        for (InputGraph inputGraph : inputGraphs) {
+        long minY = Long.MAX_VALUE;
+        long maxY = Long.MIN_VALUE;
+        for (int i = 0; i < inputData.getGraphs().size(); i++) {
+            InputGraph inputGraph = inputData.getGraphs().get(i);
+            for (long value : inputGraph.getValues()) {
+                if (value < minY) minY = value;
+                if (value > maxY) maxY = value;
+            }
+        }
+        long verticalLength = Math.abs(minY - maxY);
+
+        List<Graph> graphs = new ArrayList<>();
+        for (InputGraph inputGraph : inputData.getGraphs()) {
+            long[] data = inputGraph.getValues();
             List<GraphItem> items = new ArrayList<>();
-            List<InputItem> data = inputGraph.getValues();
-            for (int i = 0; i < data.size(); i++) {
-                float x = (float) i / (data.size() - 1);
-                float y = Math.abs(min - data.get(i).getValue()) / (float) verticalLength;
+            for (int i = 0; i < data.length; i++) {
+                float x = datePoints.get(i).getPercent();
+                float y = Math.abs(minY - data[i]) / (float) verticalLength;
                 items.add(new GraphItem(x, y));
             }
-            result.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
+            graphs.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
         }
-        return new Data(result, min, max);
-    }
-
-    private static long[] calculateYRange(List<InputItem> data) {
-        long verticalMin = data.get(0).getValue();
-        long verticalMax = data.get(0).getValue();
-        for (int i = 1; i < data.size(); i++) {
-            long value = data.get(i).getValue();
-            if (value > verticalMax) {
-                verticalMax = value;
-            } else if (value < verticalMin) {
-                verticalMin = value;
-            }
-        }
-        return new long[]{verticalMin, verticalMax};
+        return new Data(graphs, datePoints, minY, maxY);
     }
 
 }

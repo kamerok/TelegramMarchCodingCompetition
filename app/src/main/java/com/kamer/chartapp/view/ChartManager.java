@@ -3,7 +3,6 @@ package com.kamer.chartapp.view;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.graphics.Path;
-import android.util.Log;
 
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DrawGraph;
@@ -218,7 +217,6 @@ public class ChartManager {
         }
 
         List<DrawYGuides> drawYGuides = new ArrayList<>();
-        Log.d("TAG", "calculateDrawData: " + guideAlphas.size());
         for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
             YGuides guide = yGuidesFloatEntry.getKey();
             float[] yLines = new float[guide.getPercent().length * 4];
