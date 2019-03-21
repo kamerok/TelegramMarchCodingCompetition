@@ -399,7 +399,6 @@ public class ChartManager {
             if (!graph.isEnabled()) continue;
             List<GraphItem> graphItems = graph.getItems();
 
-            //todo: figure out
             if (firstInclusiveIndex > 0) {
                 float startYPercentage = calcYAtXByTwoPoints(
                         startXPercentage,
