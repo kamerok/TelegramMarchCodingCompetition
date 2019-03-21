@@ -6,6 +6,7 @@ import android.graphics.Path;
 import android.util.Pair;
 
 import com.kamer.chartapp.view.data.Data;
+import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.DrawGraph;
 import com.kamer.chartapp.view.data.DrawText;
 import com.kamer.chartapp.view.data.DrawYGuides;
@@ -155,6 +156,9 @@ public class ChartManager {
     private void calculateDrawData() {
         ArrayList<DrawGraph> result = new ArrayList<>();
 
+
+        int width = chartView.getWidth();
+        int height = chartView.getHeight();
         int firstInclusiveIndex = findFirstInclusiveIndex(leftBorder);
         int lastInclusiveIndex = findLastInclusiveIndex(rightBorder);
 
@@ -185,13 +189,13 @@ public class ChartManager {
                 end = new Pair<>(rightBorder, endYPercentage);
             }
 
-            int width = chartView.getWidth();
-            int height = chartView.getHeight();
-
             List<Pair<Float, Float>> items = new ArrayList<>();
             if (start != null) items.add(start);
             for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-                items.add(new Pair<>(data.getDatePoints().get(i).getPercent(), graphItems.get(i).getPercent()));
+                items.add(new Pair<>(
+                        data.getDatePoints().get(i).getPercent(),
+                        graphItems.get(i).getPercent()
+                ));
             }
             if (end != null) items.add(end);
 
@@ -220,6 +224,12 @@ public class ChartManager {
         }
 
         ArrayList<DrawText> xLabels = new ArrayList<>();
+        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
+            DatePoint datePoint = data.getDatePoints().get(i);
+            float xPercent = datePoint.getPercent();
+            int x = (int) (width * calcPercent(xPercent, leftBorder, rightBorder));
+            xLabels.add(new DrawText(datePoint.getText(), x, height));
+        }
         chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels));
     }
 

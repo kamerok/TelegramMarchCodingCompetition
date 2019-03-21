@@ -22,6 +22,7 @@ public class ChartView extends View {
     private Paint paint;
     private Paint guideLinePaint;
     private Paint textPaint;
+    private Paint xTextPaint;
 
     private GraphDrawData drawData;
 
@@ -74,6 +75,11 @@ public class ChartView extends View {
         textPaint = new Paint();
         textPaint.setColor(Color.GRAY);
         textPaint.setTextSize(40);
+
+        xTextPaint = new Paint();
+        xTextPaint.setColor(Color.GRAY);
+        xTextPaint.setTextSize(40);
+        xTextPaint.setTextAlign(Paint.Align.CENTER);
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
@@ -90,10 +96,9 @@ public class ChartView extends View {
             }
         }
         List<DrawText> xLabels = drawData.getxLabels();
-        guideLinePaint.setAlpha(255);
         for (int i = 0; i < xLabels.size(); i++) {
             DrawText text = xLabels.get(i);
-            canvas.drawText(text.getText(), text.getX(), text.getY(), guideLinePaint);
+            canvas.drawText(text.getText(), text.getX(), text.getY(), xTextPaint);
         }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
             DrawGraph graph = drawData.getDrawGraphs().get(i);
