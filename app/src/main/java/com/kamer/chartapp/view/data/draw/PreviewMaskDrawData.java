@@ -1,4 +1,4 @@
-package com.kamer.chartapp.view.data;
+package com.kamer.chartapp.view.data.draw;
 
 
 public class PreviewMaskDrawData {

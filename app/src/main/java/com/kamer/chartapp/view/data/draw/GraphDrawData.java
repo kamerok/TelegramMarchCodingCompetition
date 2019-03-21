@@ -1,4 +1,8 @@
-package com.kamer.chartapp.view.data;
+package com.kamer.chartapp.view.data.draw;
+
+import com.kamer.chartapp.view.data.draw.DrawGraph;
+import com.kamer.chartapp.view.data.draw.DrawText;
+import com.kamer.chartapp.view.data.draw.DrawYGuides;
 
 import java.util.List;
 

@@ -9,8 +9,8 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.kamer.chartapp.view.data.DrawGraph;
-import com.kamer.chartapp.view.data.PreviewDrawData;
+import com.kamer.chartapp.view.data.draw.DrawGraph;
+import com.kamer.chartapp.view.data.draw.PreviewDrawData;
 
 
 public class PreviewView extends View {

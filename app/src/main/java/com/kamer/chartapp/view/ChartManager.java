@@ -7,14 +7,14 @@ import android.util.Pair;
 
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
-import com.kamer.chartapp.view.data.DrawGraph;
-import com.kamer.chartapp.view.data.DrawText;
-import com.kamer.chartapp.view.data.DrawYGuides;
+import com.kamer.chartapp.view.data.draw.DrawGraph;
+import com.kamer.chartapp.view.data.draw.DrawText;
+import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.Graph;
-import com.kamer.chartapp.view.data.GraphDrawData;
+import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.GraphItem;
-import com.kamer.chartapp.view.data.PreviewDrawData;
-import com.kamer.chartapp.view.data.PreviewMaskDrawData;
+import com.kamer.chartapp.view.data.draw.PreviewDrawData;
+import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
 import com.kamer.chartapp.view.data.YGuides;
 
 import java.util.ArrayList;

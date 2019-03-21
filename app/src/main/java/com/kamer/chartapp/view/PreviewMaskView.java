@@ -10,7 +10,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.kamer.chartapp.R;
-import com.kamer.chartapp.view.data.PreviewMaskDrawData;
+import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
 
 
 public class PreviewMaskView extends View {

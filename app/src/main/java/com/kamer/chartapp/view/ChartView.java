@@ -9,10 +9,10 @@ import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
-import com.kamer.chartapp.view.data.DrawYGuides;
-import com.kamer.chartapp.view.data.GraphDrawData;
-import com.kamer.chartapp.view.data.DrawGraph;
-import com.kamer.chartapp.view.data.DrawText;
+import com.kamer.chartapp.view.data.draw.DrawYGuides;
+import com.kamer.chartapp.view.data.draw.GraphDrawData;
+import com.kamer.chartapp.view.data.draw.DrawGraph;
+import com.kamer.chartapp.view.data.draw.DrawText;
 
 import java.util.List;
 
