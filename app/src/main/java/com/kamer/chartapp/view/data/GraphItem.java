@@ -5,27 +5,27 @@ package com.kamer.chartapp.view.data;
  */
 public class GraphItem {
 
-    private float x;
-    private float y;
+    private float percent;
+    private long value;
 
-    public GraphItem(float x, float y) {
-        this.x = x;
-        this.y = y;
+    public GraphItem(float percent, long value) {
+        this.percent = percent;
+        this.value = value;
     }
 
-    public float getX() {
-        return x;
+    public float getPercent() {
+        return percent;
     }
 
-    public float getY() {
-        return y;
+    public long getValue() {
+        return value;
     }
 
     @Override
     public String toString() {
         return "GraphItem{" +
-                "x=" + x +
-                ", y=" + y +
+                "percent=" + percent +
+                ", value=" + value +
                 '}';
     }
 }

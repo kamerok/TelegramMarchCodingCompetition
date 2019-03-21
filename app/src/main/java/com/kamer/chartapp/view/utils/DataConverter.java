@@ -42,10 +42,9 @@ public class DataConverter {
         for (InputGraph inputGraph : inputData.getGraphs()) {
             long[] data = inputGraph.getValues();
             List<GraphItem> items = new ArrayList<>();
-            for (int i = 0; i < data.length; i++) {
-                float x = datePoints.get(i).getPercent();
-                float y = Math.abs(minY - data[i]) / (float) verticalLength;
-                items.add(new GraphItem(x, y));
+            for (long aData : data) {
+                float y = Math.abs(minY - aData) / (float) verticalLength;
+                items.add(new GraphItem(y, aData));
             }
             graphs.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
         }
