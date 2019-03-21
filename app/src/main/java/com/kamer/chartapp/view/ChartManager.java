@@ -2,12 +2,15 @@ package com.kamer.chartapp.view;
 
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.graphics.Color;
 import android.graphics.Path;
 import android.util.Pair;
 
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
+import com.kamer.chartapp.view.data.draw.DrawSelection;
+import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawText;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.Graph;
@@ -264,7 +267,12 @@ public class ChartManager {
             int x = (int) (width * calcPercent(xPercent, leftBorder, rightBorder));
             xLabels.add(new DrawText(datePoint.getText(), x, height));
         }
-        chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels));
+
+        List<DrawSelectionPoint> selectionPoints = new ArrayList<>();
+        selectionPoints.add(new DrawSelectionPoint(50, 100, Color.RED));
+        selectionPoints.add(new DrawSelectionPoint(150, 200, Color.GREEN));
+        DrawSelection drawSelection = new DrawSelection(width * 0.5f, selectionPoints);
+        chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels, drawSelection));
     }
 
     private float[] yGuides(float minY, float maxY) {

@@ -5,10 +5,13 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
@@ -23,6 +26,8 @@ public class ChartView extends View {
     private Paint guideLinePaint;
     private Paint textPaint;
     private Paint xTextPaint;
+    private Paint circlePaint;
+    private Paint erasePaint;
 
     private GraphDrawData drawData;
 
@@ -80,6 +85,14 @@ public class ChartView extends View {
         xTextPaint.setColor(Color.GRAY);
         xTextPaint.setTextSize(40);
         xTextPaint.setTextAlign(Paint.Align.CENTER);
+
+        circlePaint = new Paint();
+        circlePaint.setColor(Color.GRAY);
+
+        erasePaint = new Paint();
+        erasePaint.setColor(Color.GRAY);
+        erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
@@ -95,6 +108,14 @@ public class ChartView extends View {
                 canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
             }
         }
+        if (drawData.getDrawSelection() != null) {
+            guideLinePaint.setAlpha(255);
+            canvas.drawLine(
+                    drawData.getDrawSelection().getSelection(), 0,
+                    drawData.getDrawSelection().getSelection(), getHeight(),
+                    guideLinePaint
+            );
+        }
         List<DrawText> xLabels = drawData.getxLabels();
         for (int i = 0; i < xLabels.size(); i++) {
             DrawText text = xLabels.get(i);
@@ -108,6 +129,15 @@ public class ChartView extends View {
                     graph.getPath(),
                     paint
             );
+        }
+        if (drawData.getDrawSelection() != null) {
+            List<DrawSelectionPoint> points = drawData.getDrawSelection().getPoints();
+            for (int i = 0; i < points.size(); i++) {
+                DrawSelectionPoint point = points.get(i);
+                circlePaint.setColor(point.getColor());
+                canvas.drawCircle(point.getX(), point.getY(), 15, circlePaint);
+                canvas.drawCircle(point.getX(), point.getY(), 10, erasePaint);
+            }
         }
     }
 }
