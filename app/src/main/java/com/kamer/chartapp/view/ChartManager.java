@@ -46,6 +46,8 @@ public class ChartManager {
     private float totalMinY;
     private float totalMaxY = 1;
 
+    private List<Integer> datePointsIndexes = new ArrayList<>();
+
     private ValueAnimator currentAnimation;
 
     public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
@@ -80,6 +82,9 @@ public class ChartManager {
                 float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
                 guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
 
+                datePointsIndexes.clear();
+                recalculateDates();
+
                 animateZoom();
 
                 sync();
@@ -109,6 +114,7 @@ public class ChartManager {
         }
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
+            recalculateDates();
             animateZoom();
         }
     }
@@ -129,8 +135,36 @@ public class ChartManager {
         if (this.rightBorder != newRight || pan != newPan) {
             this.rightBorder = newRight;
             this.pan = newPan;
+            recalculateDates();
             animateZoom();
         }
+    }
+
+    private boolean isIndexFit(int index) {
+        if (index >= data.getDatePoints().size()) return false;
+        float dateSize = (rightBorder - leftBorder) / 4;
+        float percent = data.getDatePoints().get(index).getPercent();
+        return percent - dateSize / 2 > 0 && percent + dateSize / 2 < 1;
+    }
+
+    private void recalculateDates() {
+        int startIndex = 0;
+        while (!isIndexFit(startIndex)) {
+            startIndex = startIndex * 2 + 1;
+        }
+        List<Integer> indexes = new ArrayList<>();
+        indexes.add(startIndex);
+        int nextIndex = startIndex * 2 + 1;
+        if (isIndexFit(nextIndex)) {
+            indexes.add(nextIndex);
+            int diff = nextIndex - startIndex;
+            int index = nextIndex + diff;
+            while (isIndexFit(index)) {
+                indexes.add(index);
+                index = index + diff;
+            }
+        }
+        datePointsIndexes = indexes;
     }
 
     private void setPan(float pan) {
@@ -224,8 +258,8 @@ public class ChartManager {
         }
 
         ArrayList<DrawText> xLabels = new ArrayList<>();
-        for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-            DatePoint datePoint = data.getDatePoints().get(i);
+        for (Integer datePointIndex : datePointsIndexes) {
+            DatePoint datePoint = data.getDatePoints().get(datePointIndex);
             float xPercent = datePoint.getPercent();
             int x = (int) (width * calcPercent(xPercent, leftBorder, rightBorder));
             xLabels.add(new DrawText(datePoint.getText(), x, height));
