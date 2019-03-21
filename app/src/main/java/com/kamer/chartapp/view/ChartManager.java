@@ -2,23 +2,25 @@ package com.kamer.chartapp.view;
 
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
-import android.graphics.Color;
+import android.annotation.SuppressLint;
 import android.graphics.Path;
 import android.util.Pair;
+import android.view.MotionEvent;
+import android.view.View;
 
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
+import com.kamer.chartapp.view.data.Graph;
+import com.kamer.chartapp.view.data.GraphItem;
+import com.kamer.chartapp.view.data.YGuides;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawText;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
-import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
-import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.draw.PreviewDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
-import com.kamer.chartapp.view.data.YGuides;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,11 +50,13 @@ public class ChartManager {
     private float maxY = 1;
     private float totalMinY;
     private float totalMaxY = 1;
+    private DrawSelection drawSelection;
 
     private List<Integer> datePointsIndexes = new ArrayList<>();
 
     private ValueAnimator currentAnimation;
 
+    @SuppressLint("ClickableViewAccessibility")
     public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
         this.chartView = chartView;
         this.previewView = previewView;
@@ -73,6 +77,15 @@ public class ChartManager {
             @Override
             public void onPanChanged(float dX) {
                 setPan(pan + dX);
+            }
+        });
+        chartView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    updateSelection(event.getX());
+                }
+                return true;
             }
         });
     }
@@ -117,6 +130,7 @@ public class ChartManager {
         }
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
+            drawSelection = null;
             recalculateDates();
             animateZoom();
         }
@@ -138,7 +152,65 @@ public class ChartManager {
         if (this.rightBorder != newRight || pan != newPan) {
             this.rightBorder = newRight;
             this.pan = newPan;
+            drawSelection = null;
             recalculateDates();
+            animateZoom();
+        }
+    }
+
+    private void updateSelection(float x) {
+        float localPercent = x / chartView.getWidth();
+        float percent = visiblePartSize() * localPercent + leftBorder;
+
+        int selectedIndex = 0;
+        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder);
+        for (int i = findFirstInclusiveIndex(leftBorder); i < lastInclusiveIndex; i++) {
+            float current = data.getDatePoints().get(i).getPercent();
+            float next = data.getDatePoints().get(i + 1).getPercent();
+            if (percent < current) {
+                selectedIndex = i;
+                break;
+            } else if (percent > current && percent < next) {
+                if (Math.abs(percent - current) < Math.abs(percent - next)) {
+                    selectedIndex = i;
+                } else {
+                    selectedIndex = i + 1;
+                }
+                break;
+            } else if (percent > next && i + 1 == lastInclusiveIndex) {
+                selectedIndex = i + 1;
+                break;
+            }
+        }
+
+        float selectedPercent = data.getDatePoints().get(selectedIndex).getPercent();
+        ArrayList<DrawSelectionPoint> points = new ArrayList<>();
+        List<Graph> graphs = data.getGraphs();
+        float realX = chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder);
+        for (int i = 0; i < graphs.size(); i++) {
+            Graph graph = graphs.get(i);
+            float realY = calculateYFromPercent(chartView.getHeight(), graph.getItems().get(selectedIndex).getPercent(), minY, maxY, PADDING_VERTICAL);
+            points.add(new DrawSelectionPoint(realX, realY, graph.getColor()));
+        }
+        drawSelection = new DrawSelection(realX, points);
+
+        calculateDrawData();
+        chartView.invalidate();
+    }
+
+    private void setPan(float pan) {
+        float newPan = pan;
+        if (visiblePartSize() + newPan > 1) {
+            newPan = 1 - visiblePartSize();
+        } else if (newPan < 0) {
+            newPan = 0;
+        }
+        if (this.pan != newPan) {
+            float diff = this.pan - newPan;
+            this.pan = newPan;
+            this.leftBorder += diff;
+            this.rightBorder += diff;
+            drawSelection = null;
             animateZoom();
         }
     }
@@ -168,22 +240,6 @@ public class ChartManager {
             }
         }
         datePointsIndexes = indexes;
-    }
-
-    private void setPan(float pan) {
-        float newPan = pan;
-        if (visiblePartSize() + newPan > 1) {
-            newPan = 1 - visiblePartSize();
-        } else if (newPan < 0) {
-            newPan = 0;
-        }
-        if (this.pan != newPan) {
-            float diff = this.pan - newPan;
-            this.pan = newPan;
-            this.leftBorder += diff;
-            this.rightBorder += diff;
-            animateZoom();
-        }
     }
 
     private void sync() {
@@ -268,10 +324,6 @@ public class ChartManager {
             xLabels.add(new DrawText(datePoint.getText(), x, height));
         }
 
-        List<DrawSelectionPoint> selectionPoints = new ArrayList<>();
-        selectionPoints.add(new DrawSelectionPoint(50, 100, Color.RED));
-        selectionPoints.add(new DrawSelectionPoint(150, 200, Color.GREEN));
-        DrawSelection drawSelection = new DrawSelection(width * 0.5f, selectionPoints);
         chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels, drawSelection));
     }
 
