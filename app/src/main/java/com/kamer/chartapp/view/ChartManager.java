@@ -79,7 +79,6 @@ public class ChartManager {
                 float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
                 guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
 
-                calculateDrawData();
                 animateZoom();
 
                 sync();
@@ -92,7 +91,6 @@ public class ChartManager {
             Graph graph = data.getGraphs().get(i);
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
-                calculateDrawData();
                 animateZoom();
                 sync();
                 return;
@@ -110,11 +108,8 @@ public class ChartManager {
         }
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
-            calculateDrawData();
             animateZoom();
         }
-
-        sync();
     }
 
     private void setRightBorder(float rightBorder) {
@@ -133,11 +128,8 @@ public class ChartManager {
         if (this.rightBorder != newRight || pan != newPan) {
             this.rightBorder = newRight;
             this.pan = newPan;
-            calculateDrawData();
             animateZoom();
         }
-
-        sync();
     }
 
     private void setPan(float pan) {
@@ -152,16 +144,11 @@ public class ChartManager {
             this.pan = newPan;
             this.leftBorder += diff;
             this.rightBorder += diff;
-            calculateDrawData();
             animateZoom();
         }
-
-        sync();
     }
 
     private void sync() {
-        calculatePreviewDrawData(data.getGraphs());
-        previewView.invalidate();
         updateListener.onUpdate(data.getGraphs());
     }
 
