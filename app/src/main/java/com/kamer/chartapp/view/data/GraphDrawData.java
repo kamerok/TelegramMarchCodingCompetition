@@ -6,10 +6,12 @@ public class GraphDrawData {
 
     private List<DrawGraph> drawGraphs;
     private List<DrawYGuides> drawYGuides;
+    private List<DrawText> xLabels;
 
-    public GraphDrawData(List<DrawGraph> drawGraphs, List<DrawYGuides> drawYGuides) {
+    public GraphDrawData(List<DrawGraph> drawGraphs, List<DrawYGuides> drawYGuides, List<DrawText> xLabels) {
         this.drawGraphs = drawGraphs;
         this.drawYGuides = drawYGuides;
+        this.xLabels = xLabels;
     }
 
     public List<DrawGraph> getDrawGraphs() {
@@ -20,11 +22,16 @@ public class GraphDrawData {
         return drawYGuides;
     }
 
+    public List<DrawText> getxLabels() {
+        return xLabels;
+    }
+
     @Override
     public String toString() {
         return "GraphDrawData{" +
                 "drawGraphs=" + drawGraphs +
                 ", drawYGuides=" + drawYGuides +
+                ", xLabels=" + xLabels +
                 '}';
     }
 }

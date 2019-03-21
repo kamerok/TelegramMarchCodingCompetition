@@ -236,7 +236,8 @@ public class ChartManager {
             drawYGuides.add(new DrawYGuides(yLines, drawTexts, ((int) (yGuidesFloatEntry.getValue() * 255))));
         }
 
-        chartView.setDrawData(new GraphDrawData(result, drawYGuides));
+        ArrayList<DrawText> xLabels = new ArrayList<>();
+        chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels));
     }
 
     private float[] yGuides(float minY, float maxY) {

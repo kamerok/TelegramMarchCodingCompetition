@@ -89,6 +89,12 @@ public class ChartView extends View {
                 canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
             }
         }
+        List<DrawText> xLabels = drawData.getxLabels();
+        guideLinePaint.setAlpha(255);
+        for (int i = 0; i < xLabels.size(); i++) {
+            DrawText text = xLabels.get(i);
+            canvas.drawText(text.getText(), text.getX(), text.getY(), guideLinePaint);
+        }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
             DrawGraph graph = drawData.getDrawGraphs().get(i);
             paint.setColor(graph.getColor());
