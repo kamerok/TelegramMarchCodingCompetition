@@ -99,6 +99,7 @@ public class ChartManager {
                 float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
                 guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
 
+                drawSelection = null;
                 datePointsIndexes.clear();
                 recalculateDates();
 
@@ -187,31 +188,33 @@ public class ChartManager {
 
         DatePoint datePoint = data.getDatePoints().get(selectedIndex);
         float selectedPercent = datePoint.getPercent();
-        List<DrawSelectionPoint> points = new ArrayList<>();
-        List<DrawText> texts = new ArrayList<>();
-        List<Graph> graphs = data.getGraphs();
         float realX = chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder);
 
-        int popupWidth = 200;
-        int left;
+        int border;
+        boolean isAlignedRight;
         if (localPercent > 0.5) {
-            left = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) - 50 - popupWidth);
-        } else  {
-            left = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) + 50);
+            border = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) - 50);
+            isAlignedRight = true;
+        } else {
+            border = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) + 50);
+            isAlignedRight = false;
         }
 
+        List<DrawSelectionPoint> points = new ArrayList<>();
+        List<Pair<String, Integer>> texts = new ArrayList<>();
+        List<Graph> graphs = data.getGraphs();
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
             GraphItem graphItem = graph.getItems().get(selectedIndex);
             float realY = calculateYFromPercent(chartView.getHeight(), graphItem.getPercent(), minY, maxY, PADDING_VERTICAL);
             points.add(new DrawSelectionPoint(realX, realY, graph.getColor()));
-            texts.add(new DrawText(graphItem.getValue() + "", left, 100 + 40 * i));
+            texts.add(new Pair<>(graphItem.getValue() + "", graph.getColor()));
         }
 
-
         DrawSelectionPopup popup = new DrawSelectionPopup(
-                left, left + popupWidth, 0, 200,
-                new DrawText(datePoint.getText(), left, 50),
+                border,
+                isAlignedRight,
+                datePoint.getTextExtended(),
                 texts
         );
         drawSelection = new DrawSelection(realX, points, popup);

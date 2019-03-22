@@ -15,6 +15,7 @@ import java.util.Locale;
 public class DataConverter {
 
     private static final SimpleDateFormat format = new SimpleDateFormat("MMM d", Locale.ENGLISH);
+    private static final SimpleDateFormat extendedFormat = new SimpleDateFormat("EEE, MMM d", Locale.ENGLISH);
 
     public static Data convertInput(InputData inputData) {
 
@@ -24,7 +25,7 @@ public class DataConverter {
         List<DatePoint> datePoints = new ArrayList<>();
         for (long timestamp : inputData.getTimestamps()) {
             float percent = (timestamp - minX) / (float) dateLength;
-            datePoints.add(new DatePoint(percent, timestamp, format.format(timestamp)));
+            datePoints.add(new DatePoint(percent, timestamp, format.format(timestamp), extendedFormat.format(timestamp)));
         }
 
         long minY = Long.MAX_VALUE;

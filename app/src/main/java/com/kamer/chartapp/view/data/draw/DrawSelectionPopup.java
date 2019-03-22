@@ -1,58 +1,46 @@
 package com.kamer.chartapp.view.data.draw;
 
+import android.util.Pair;
+
 import java.util.List;
 
 public class DrawSelectionPopup {
 
-    private float left;
-    private float right;
-    private float top;
-    private float bottom;
-    private DrawText date;
-    private List<DrawText> value;
+    private float border;
+    private boolean isAlignedRight;
+    private String dateText;
+    private List<Pair<String, Integer>> values;
 
-    public DrawSelectionPopup(float left, float right, float top, float bottom, DrawText date, List<DrawText> value) {
-        this.left = left;
-        this.right = right;
-        this.top = top;
-        this.bottom = bottom;
-        this.date = date;
-        this.value = value;
+    public DrawSelectionPopup(float border, boolean isAlignedRight, String dateText, List<Pair<String, Integer>> values) {
+        this.border = border;
+        this.isAlignedRight = isAlignedRight;
+        this.dateText = dateText;
+        this.values = values;
     }
 
-    public float getLeft() {
-        return left;
+    public float getBorder() {
+        return border;
     }
 
-    public float getRight() {
-        return right;
+    public boolean isAlignedRight() {
+        return isAlignedRight;
     }
 
-    public float getTop() {
-        return top;
+    public String getDateText() {
+        return dateText;
     }
 
-    public float getBottom() {
-        return bottom;
-    }
-
-    public DrawText getDate() {
-        return date;
-    }
-
-    public List<DrawText> getValue() {
-        return value;
+    public List<Pair<String, Integer>> getValues() {
+        return values;
     }
 
     @Override
     public String toString() {
         return "DrawSelectionPopup{" +
-                "left=" + left +
-                ", right=" + right +
-                ", top=" + top +
-                ", bottom=" + bottom +
-                ", date=" + date +
-                ", value=" + value +
+                "border=" + border +
+                ", isAlignedRight=" + isAlignedRight +
+                ", dateText='" + dateText + '\'' +
+                ", values=" + values +
                 '}';
     }
 }

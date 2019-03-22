@@ -9,14 +9,17 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.Pair;
 import android.view.View;
 
+import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawText;
+import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.List;
 
@@ -30,9 +33,20 @@ public class ChartView extends View {
     private Paint circlePaint;
     private Paint erasePaint;
     private Paint selectionPopupPaint;
-    private Paint selectionPopupTextPaint;
+    private Paint selectionPopupDatePaint;
+    private Paint selectionPopupValuePaint;
 
     private GraphDrawData drawData;
+
+    private float popupTopMargin;
+    private float popupWidth;
+    private float popupVerticalPadding;
+    private float popupHorizontalPadding;
+    private float popupCornerRadius;
+    private float popupDateSize;
+    private float popupValueSize;
+    private float popupValueMargin;
+    private float popupDateMargin;
 
     public ChartView(Context context) {
         super(context);
@@ -68,11 +82,21 @@ public class ChartView extends View {
 
     public void setColors(int popupColor, int popupTextColor, int shadowColor) {
         selectionPopupPaint.setColor(popupColor);
-        selectionPopupTextPaint.setColor(popupTextColor);
         selectionPopupPaint.setShadowLayer(1, 0, 0, shadowColor);
+        selectionPopupDatePaint.setColor(popupTextColor);
     }
 
     private void init() {
+        popupTopMargin = UnitConverter.dpToPx(16);
+        popupWidth = UnitConverter.dpToPx(120);
+        popupVerticalPadding = UnitConverter.dpToPx(10);
+        popupHorizontalPadding = UnitConverter.dpToPx(16);
+        popupCornerRadius = UnitConverter.dpToPx(4);
+        popupDateSize = UnitConverter.dpToPx(14);
+        popupValueSize = UnitConverter.dpToPx(16);
+        popupValueMargin = UnitConverter.dpToPx(2);
+        popupDateMargin = UnitConverter.dpToPx(4);
+
         paint = new Paint();
         paint.setColor(Color.RED);
         paint.setStrokeWidth(8);
@@ -106,9 +130,14 @@ public class ChartView extends View {
         selectionPopupPaint.setColor(Color.WHITE);
         selectionPopupPaint.setShadowLayer(1, 0, 0, Color.GRAY);
 
-        selectionPopupTextPaint = new Paint();
-        selectionPopupTextPaint.setColor(Color.BLACK);
-        selectionPopupTextPaint.setTextSize(40);
+        selectionPopupDatePaint = new Paint();
+        selectionPopupDatePaint.setColor(Color.BLACK);
+        selectionPopupDatePaint.setTextSize(popupDateSize);
+        selectionPopupDatePaint.setFakeBoldText(true);
+
+        selectionPopupValuePaint = new Paint();
+        selectionPopupValuePaint.setTextSize(popupValueSize);
+        selectionPopupValuePaint.setFakeBoldText(true);
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
@@ -124,14 +153,7 @@ public class ChartView extends View {
                 canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
             }
         }
-        if (drawData.getDrawSelection() != null) {
-            guideLinePaint.setAlpha(255);
-            canvas.drawLine(
-                    drawData.getDrawSelection().getSelection(), 0,
-                    drawData.getDrawSelection().getSelection(), getHeight(),
-                    guideLinePaint
-            );
-        }
+        drawSelectionLine(canvas, drawData);
         List<DrawText> xLabels = drawData.getxLabels();
         for (int i = 0; i < xLabels.size(); i++) {
             DrawText text = xLabels.get(i);
@@ -147,20 +169,47 @@ public class ChartView extends View {
             );
         }
         if (drawData.getDrawSelection() != null) {
-            List<DrawSelectionPoint> points = drawData.getDrawSelection().getPoints();
-            for (int i = 0; i < points.size(); i++) {
-                DrawSelectionPoint point = points.get(i);
-                circlePaint.setColor(point.getColor());
-                canvas.drawCircle(point.getX(), point.getY(), 15, circlePaint);
-                canvas.drawCircle(point.getX(), point.getY(), 10, erasePaint);
-            }
-            DrawSelectionPopup popup = drawData.getDrawSelection().getPopup();
-            canvas.drawRoundRect(popup.getLeft(), popup.getTop(), popup.getRight(), popup.getBottom(), 10, 10, selectionPopupPaint);
-            DrawText dateText = popup.getDate();
-            canvas.drawText(dateText.getText(), dateText.getX(), dateText.getY(), selectionPopupTextPaint);
-            for (DrawText drawText : popup.getValue()) {
-                canvas.drawText(drawText.getText(), drawText.getX(), drawText.getY(), selectionPopupTextPaint);
-            }
+            drawSelection(canvas, drawData.getDrawSelection());
+        }
+    }
+
+    private void drawSelectionLine(Canvas canvas, GraphDrawData drawData) {
+        if (drawData.getDrawSelection() != null) {
+            guideLinePaint.setAlpha(255);
+            canvas.drawLine(
+                    drawData.getDrawSelection().getSelection(), 0,
+                    drawData.getDrawSelection().getSelection(), getHeight(),
+                    guideLinePaint
+            );
+        }
+    }
+
+    private void drawSelection(Canvas canvas, DrawSelection drawSelection) {
+        List<DrawSelectionPoint> points = drawSelection.getPoints();
+        for (int i = 0; i < points.size(); i++) {
+            DrawSelectionPoint point = points.get(i);
+            circlePaint.setColor(point.getColor());
+            canvas.drawCircle(point.getX(), point.getY(), 15, circlePaint);
+            canvas.drawCircle(point.getX(), point.getY(), 10, erasePaint);
+        }
+
+        DrawSelectionPopup popup = drawSelection.getPopup();
+        List<Pair<String, Integer>> values = popup.getValues();
+        float left = popup.getBorder();
+        float right = popup.getBorder();
+        if (popup.isAlignedRight()) {
+            left = left - popupWidth;
+        } else {
+            right = right + popupWidth;
+        }
+        float top = popupTopMargin;
+        float height = popupVerticalPadding * 2 + popupDateSize + popupValueSize * values.size() + popupValueMargin * (values.size() - 1) + popupDateMargin;
+        canvas.drawRoundRect(left, top, right, height + top, popupCornerRadius, popupCornerRadius, selectionPopupPaint);
+        canvas.drawText(popup.getDateText(), left + popupHorizontalPadding, top + popupDateSize + popupVerticalPadding, selectionPopupDatePaint);
+        for (int i = 0; i < values.size(); i++) {
+            Pair<String, Integer> drawText = values.get(i);
+            selectionPopupValuePaint.setColor(drawText.second);
+            canvas.drawText(drawText.first, left + popupHorizontalPadding, top + popupDateSize + popupVerticalPadding + popupDateMargin + popupValueMargin * (i) + popupValueSize * (i + 1), selectionPopupValuePaint);
         }
     }
 }
