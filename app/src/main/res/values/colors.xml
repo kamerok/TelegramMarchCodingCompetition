@@ -14,4 +14,11 @@
     <color name="colorDarkFrame">#734A7194</color>
     <color name="colorOverlay">#99E1E9E9</color>
     <color name="colorFrame">#73B5CFE4</color>
+
+    <color name="colorPopup">#F2F2F2</color>
+    <color name="colorDarkPopup">#19212A</color>
+    <color name="colorDarkPopupShadow">#000000</color>
+    <color name="colorPopupShadow">#888888</color>
+
+    <color name="colorDarkText">#F2F2F2</color>
 </resources>

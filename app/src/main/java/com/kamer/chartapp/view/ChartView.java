@@ -12,6 +12,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
+import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
@@ -28,6 +29,8 @@ public class ChartView extends View {
     private Paint xTextPaint;
     private Paint circlePaint;
     private Paint erasePaint;
+    private Paint selectionPopupPaint;
+    private Paint selectionPopupTextPaint;
 
     private GraphDrawData drawData;
 
@@ -63,6 +66,12 @@ public class ChartView extends View {
         this.drawData = drawData;
     }
 
+    public void setColors(int popupColor, int popupTextColor, int shadowColor) {
+        selectionPopupPaint.setColor(popupColor);
+        selectionPopupTextPaint.setColor(popupTextColor);
+        selectionPopupPaint.setShadowLayer(1, 0, 0, shadowColor);
+    }
+
     private void init() {
         paint = new Paint();
         paint.setColor(Color.RED);
@@ -93,6 +102,13 @@ public class ChartView extends View {
         erasePaint.setColor(Color.GRAY);
         erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 
+        selectionPopupPaint = new Paint();
+        selectionPopupPaint.setColor(Color.WHITE);
+        selectionPopupPaint.setShadowLayer(1, 0, 0, Color.GRAY);
+
+        selectionPopupTextPaint = new Paint();
+        selectionPopupTextPaint.setColor(Color.BLACK);
+        selectionPopupTextPaint.setTextSize(40);
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
@@ -137,6 +153,13 @@ public class ChartView extends View {
                 circlePaint.setColor(point.getColor());
                 canvas.drawCircle(point.getX(), point.getY(), 15, circlePaint);
                 canvas.drawCircle(point.getX(), point.getY(), 10, erasePaint);
+            }
+            DrawSelectionPopup popup = drawData.getDrawSelection().getPopup();
+            canvas.drawRoundRect(popup.getLeft(), popup.getTop(), popup.getRight(), popup.getBottom(), 10, 10, selectionPopupPaint);
+            DrawText dateText = popup.getDate();
+            canvas.drawText(dateText.getText(), dateText.getX(), dateText.getY(), selectionPopupTextPaint);
+            for (DrawText drawText : popup.getValue()) {
+                canvas.drawText(drawText.getText(), drawText.getX(), drawText.getY(), selectionPopupTextPaint);
             }
         }
     }

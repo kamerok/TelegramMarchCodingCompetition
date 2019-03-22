@@ -108,7 +108,6 @@ public class PreviewMaskView extends View {
 
     public void setColors(int overlayColor, int frameColor) {
         initPaints(overlayColor, frameColor);
-        invalidate();
     }
 
     public void setListener(Listener listener) {

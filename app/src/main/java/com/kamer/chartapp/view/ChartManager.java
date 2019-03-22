@@ -16,6 +16,7 @@ import com.kamer.chartapp.view.data.YGuides;
 import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
+import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
 import com.kamer.chartapp.view.data.draw.DrawText;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
@@ -113,6 +114,7 @@ public class ChartManager {
             Graph graph = data.getGraphs().get(i);
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
+                drawSelection = null;
                 animateZoom();
                 sync();
                 return;
@@ -183,16 +185,36 @@ public class ChartManager {
             }
         }
 
-        float selectedPercent = data.getDatePoints().get(selectedIndex).getPercent();
-        ArrayList<DrawSelectionPoint> points = new ArrayList<>();
+        DatePoint datePoint = data.getDatePoints().get(selectedIndex);
+        float selectedPercent = datePoint.getPercent();
+        List<DrawSelectionPoint> points = new ArrayList<>();
+        List<DrawText> texts = new ArrayList<>();
         List<Graph> graphs = data.getGraphs();
         float realX = chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder);
+
+        int popupWidth = 200;
+        int left;
+        if (localPercent > 0.5) {
+            left = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) - 50 - popupWidth);
+        } else  {
+            left = (int) (chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder) + 50);
+        }
+
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
-            float realY = calculateYFromPercent(chartView.getHeight(), graph.getItems().get(selectedIndex).getPercent(), minY, maxY, PADDING_VERTICAL);
+            GraphItem graphItem = graph.getItems().get(selectedIndex);
+            float realY = calculateYFromPercent(chartView.getHeight(), graphItem.getPercent(), minY, maxY, PADDING_VERTICAL);
             points.add(new DrawSelectionPoint(realX, realY, graph.getColor()));
+            texts.add(new DrawText(graphItem.getValue() + "", left, 100 + 40 * i));
         }
-        drawSelection = new DrawSelection(realX, points);
+
+
+        DrawSelectionPopup popup = new DrawSelectionPopup(
+                left, left + popupWidth, 0, 200,
+                new DrawText(datePoint.getText(), left, 50),
+                texts
+        );
+        drawSelection = new DrawSelection(realX, points, popup);
 
         calculateDrawData();
         chartView.invalidate();

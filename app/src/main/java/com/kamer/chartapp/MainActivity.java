@@ -38,6 +38,7 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
 
     private ChartManager chartManager;
     private PreviewMaskView previewMaskView;
+    private ChartView chartView;
 
     private Menu menu;
 
@@ -48,14 +49,16 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
     private int textColor;
     private int overlayColor;
     private int frameColor;
+    private int popupColor;
+    private int popupShadowColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ChartView chartView = findViewById(R.id.view_chart);
         PreviewView previewView = findViewById(R.id.view_preview);
+        chartView = findViewById(R.id.view_chart);
         previewMaskView = findViewById(R.id.view_preview_mask);
         buttonsLayout = findViewById(R.id.layout_buttons);
         radioGroupLayout = findViewById(R.id.radio_group_layout);
@@ -63,17 +66,20 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         primaryColor = getResources().getColor(R.color.colorDarkPrimary);
         darkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
         backgroundColor = getResources().getColor(R.color.colorDarkBackground);
-        textColor = Color.WHITE;
+        textColor = getResources().getColor(R.color.colorDarkText);
         overlayColor = getResources().getColor(R.color.colorDarkOverlay);
         frameColor = getResources().getColor(R.color.colorDarkFrame);
+        popupColor = getResources().getColor(R.color.colorDarkPopup);
+        popupShadowColor = getResources().getColor(R.color.colorDarkPopupShadow);
 
         setColors(primaryColor, darkColor, backgroundColor, textColor);
+        chartView.setColors(popupColor, textColor, popupShadowColor);
 
         List<InputData> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
             RadioButton radioButton = new RadioButton(this);
             radioButton.setText("" + i);
-            radioButton.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
+            radioButton.setTextColor(isDarkTheme ? getResources().getColor(R.color.colorDarkText) : Color.BLACK);
             radioButton.setButtonTintList(ColorStateList.valueOf(getResources().getColor(R.color.colorAccent)));
             final int index = i;
             radioGroupLayout.addView(radioButton);
@@ -115,14 +121,18 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         int targetTextColor;
         int targetOverlayColor;
         int targetFrameColor;
+        int targetPopupColor;
+        int targetPopupShadowColor;
         if (isDarkTheme) {
             menu.getItem(0).setIcon(R.drawable.ic_brightness_7_black_24dp);
             targetPrimaryColor = getResources().getColor(R.color.colorDarkPrimary);
             targetDarkColor = getResources().getColor(R.color.colorDarkPrimaryDark);
             targetBackgroundColor = getResources().getColor(R.color.colorDarkBackground);
-            targetTextColor = Color.WHITE;
+            targetTextColor = getResources().getColor(R.color.colorDarkText);
             targetOverlayColor = getResources().getColor(R.color.colorDarkOverlay);
             targetFrameColor = getResources().getColor(R.color.colorDarkFrame);
+            targetPopupColor = getResources().getColor(R.color.colorDarkPopup);
+            targetPopupShadowColor = getResources().getColor(R.color.colorDarkPopupShadow);
         } else {
             menu.getItem(0).setIcon(R.drawable.moon);
             targetPrimaryColor = getResources().getColor(R.color.colorPrimary);
@@ -131,16 +141,20 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
             targetTextColor = Color.BLACK;
             targetOverlayColor = getResources().getColor(R.color.colorOverlay);
             targetFrameColor = getResources().getColor(R.color.colorFrame);
+            targetPopupColor = getResources().getColor(R.color.colorPopup);
+            targetPopupShadowColor = getResources().getColor(R.color.colorPopupShadow);
         }
 
 
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[6];
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[8];
         properties[0] = PropertyValuesHolder.ofObject("primary", new ArgbEvaluator(), primaryColor, targetPrimaryColor);
         properties[1] = PropertyValuesHolder.ofObject("primaryDark", new ArgbEvaluator(), darkColor, targetDarkColor);
         properties[2] = PropertyValuesHolder.ofObject("background", new ArgbEvaluator(), backgroundColor, targetBackgroundColor);
         properties[3] = PropertyValuesHolder.ofObject("text", new ArgbEvaluator(), textColor, targetTextColor);
         properties[4] = PropertyValuesHolder.ofObject("overlay", new ArgbEvaluator(), overlayColor, targetOverlayColor);
         properties[5] = PropertyValuesHolder.ofObject("frame", new ArgbEvaluator(), frameColor, targetFrameColor);
+        properties[6] = PropertyValuesHolder.ofObject("popup", new ArgbEvaluator(), popupColor, targetPopupColor);
+        properties[7] = PropertyValuesHolder.ofObject("popupShadow", new ArgbEvaluator(), popupShadowColor, targetPopupShadowColor);
         if (themeAnimator != null) {
             themeAnimator.cancel();
         }
@@ -157,6 +171,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                 int newTextColor = (int) valueAnimator.getAnimatedValue("text");
                 int newOverlayColor = (int) valueAnimator.getAnimatedValue("overlay");
                 int newFrameColor = (int) valueAnimator.getAnimatedValue("frame");
+                int newPopupColor = (int) valueAnimator.getAnimatedValue("popup");
+                int newPopupShadowColor = (int) valueAnimator.getAnimatedValue("popupShadow");
                 setColors(
                         newPrimaryColor,
                         newDarkColor,
@@ -164,12 +180,18 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                         newTextColor
                 );
                 previewMaskView.setColors(newOverlayColor, newFrameColor);
+                previewMaskView.invalidate();
+                chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor);
+                chartView.invalidate();
+
                 primaryColor = newPrimaryColor;
                 darkColor = newDarkColor;
                 backgroundColor = newBackgroundColor;
                 textColor = newTextColor;
                 overlayColor = newOverlayColor;
                 frameColor = newFrameColor;
+                popupColor = newPopupColor;
+                popupShadowColor = newPopupShadowColor;
             }
         });
         themeAnimator = animator;
@@ -197,7 +219,7 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
             checkBox.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             checkBox.setText(datum.getName());
             checkBox.setChecked(datum.isEnabled());
-            checkBox.setTextColor(isDarkTheme ? Color.WHITE : Color.BLACK);
+            checkBox.setTextColor(isDarkTheme ? getResources().getColor(R.color.colorDarkText) : Color.BLACK);
             checkBox.setButtonTintList(ColorStateList.valueOf(datum.getColor()));
             checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
