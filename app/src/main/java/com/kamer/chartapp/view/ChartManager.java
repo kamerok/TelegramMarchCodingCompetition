@@ -249,8 +249,8 @@ public class ChartManager {
 
     private boolean isIndexFit(int index) {
         if (index >= data.getDatePoints().size()) return false;
-        float dateSize = (rightBorder - leftBorder) / 4;
-        float percent = data.getDatePoints().get(index).getPercent();
+        float dateSize = 0.3f * visiblePartSize();
+        float percent = applyXMargin(data.getDatePoints().get(index).getPercent());
         return percent - dateSize / 2 > 0 && percent + dateSize / 2 < 1;
     }
 
@@ -353,7 +353,7 @@ public class ChartManager {
         for (Integer datePointIndex : datePointsIndexes) {
             DatePoint datePoint = data.getDatePoints().get(datePointIndex);
             float xPercent = datePoint.getPercent();
-            int x = (int) (width * calcPercent(xPercent, leftBorder, rightBorder));
+            int x = (int) (width * calcPercent(applyXMargin(xPercent), leftBorder, rightBorder));
             xLabels.add(new DrawText(datePoint.getText(), x, height));
         }
 
