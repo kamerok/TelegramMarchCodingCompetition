@@ -38,6 +38,10 @@ public class ChartView extends View {
     private GraphDrawData drawData;
 
     private float viewPadding;
+
+    private float lineWidth;
+    private float circleRadius;
+
     private float popupWidth;
     private float popupVerticalPadding;
     private float popupHorizontalPadding;
@@ -89,6 +93,8 @@ public class ChartView extends View {
 
     private void init() {
         viewPadding = UnitConverter.dpToPx(16);
+        lineWidth = UnitConverter.dpToPx(2);
+        circleRadius = UnitConverter.dpToPx(5);
         popupWidth = UnitConverter.dpToPx(120);
         popupVerticalPadding = UnitConverter.dpToPx(10);
         popupHorizontalPadding = UnitConverter.dpToPx(16);
@@ -100,7 +106,7 @@ public class ChartView extends View {
 
         paint = new Paint();
         paint.setColor(Color.RED);
-        paint.setStrokeWidth(8);
+        paint.setStrokeWidth(lineWidth);
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeJoin(Paint.Join.ROUND);
@@ -191,8 +197,8 @@ public class ChartView extends View {
         for (int i = 0; i < points.size(); i++) {
             DrawSelectionPoint point = points.get(i);
             circlePaint.setColor(point.getColor());
-            canvas.drawCircle(point.getX(), point.getY(), 15, circlePaint);
-            canvas.drawCircle(point.getX(), point.getY(), 10, erasePaint);
+            canvas.drawCircle(point.getX(), point.getY(), circleRadius, circlePaint);
+            canvas.drawCircle(point.getX(), point.getY(), circleRadius - lineWidth, erasePaint);
         }
 
         DrawSelectionPopup popup = drawSelection.getPopup();
