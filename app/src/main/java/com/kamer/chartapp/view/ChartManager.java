@@ -82,7 +82,7 @@ public class ChartManager {
         chartView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                if (event.getAction() == MotionEvent.ACTION_MOVE || event.getAction() == MotionEvent.ACTION_DOWN) {
                     updateSelection(event.getX());
                 }
                 return true;
@@ -538,7 +538,7 @@ public class ChartManager {
     private int findFirstInclusiveIndex(float startXPercentage) {
         for (int i = 0; i < data.getDatePoints().size(); i++) {
             float value = data.getDatePoints().get(i).getPercent();
-            if (value > startXPercentage) {
+            if (value > startXPercentage || isFloatEquals(value, startXPercentage)) {
                 return i;
             }
         }
@@ -548,7 +548,7 @@ public class ChartManager {
     private int findLastInclusiveIndex(float endXPercentage) {
         for (int i = data.getDatePoints().size() - 1; i >= 0; i--) {
             float value = data.getDatePoints().get(i).getPercent();
-            if (value < endXPercentage) {
+            if (value < endXPercentage || isFloatEquals(value, endXPercentage)) {
                 return i;
             }
         }
@@ -557,6 +557,10 @@ public class ChartManager {
 
     private float calcYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
         return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
+    }
+
+    private boolean isFloatEquals(float f1, float f2) {
+        return Math.abs(f1 - f2) < 0.0001;
     }
 
     public interface UpdateListener {
