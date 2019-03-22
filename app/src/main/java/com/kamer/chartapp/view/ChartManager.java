@@ -58,6 +58,9 @@ public class ChartManager {
 
     private ValueAnimator currentAnimation;
 
+    private float xMarginPercent;
+    private float xMarginPx = UnitConverter.dpToPx(16);
+
     @SuppressLint("ClickableViewAccessibility")
     public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
         this.chartView = chartView;
@@ -97,12 +100,13 @@ public class ChartManager {
             @Override
             public void run() {
                 ChartManager.this.data = data;
-                float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
+                float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize(), true);
                 guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
 
                 drawSelection = null;
                 datePointsIndexes.clear();
                 recalculateDates();
+                recalculateXMargin();
 
                 animateZoom();
 
@@ -136,6 +140,7 @@ public class ChartManager {
             this.leftBorder = newLeft;
             drawSelection = null;
             recalculateDates();
+            recalculateXMargin();
             animateZoom();
         }
     }
@@ -158,6 +163,7 @@ public class ChartManager {
             this.pan = newPan;
             drawSelection = null;
             recalculateDates();
+            recalculateXMargin();
             animateZoom();
         }
     }
@@ -167,10 +173,10 @@ public class ChartManager {
         float percent = visiblePartSize() * localPercent + leftBorder;
 
         int selectedIndex = 0;
-        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder);
-        for (int i = findFirstInclusiveIndex(leftBorder); i < lastInclusiveIndex; i++) {
-            float current = data.getDatePoints().get(i).getPercent();
-            float next = data.getDatePoints().get(i + 1).getPercent();
+        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder, true);
+        for (int i = findFirstInclusiveIndex(leftBorder, true); i < lastInclusiveIndex; i++) {
+            float current = applyXMargin(data.getDatePoints().get(i).getPercent());
+            float next = applyXMargin(data.getDatePoints().get(i + 1).getPercent());
             if (percent < current) {
                 selectedIndex = i;
                 break;
@@ -188,7 +194,7 @@ public class ChartManager {
         }
 
         DatePoint datePoint = data.getDatePoints().get(selectedIndex);
-        float selectedPercent = datePoint.getPercent();
+        float selectedPercent = applyXMargin(datePoint.getPercent());
         float realX = chartView.getWidth() * calcPercent(selectedPercent, leftBorder, rightBorder);
 
         int border;
@@ -278,8 +284,8 @@ public class ChartManager {
 
         int width = chartView.getWidth();
         int height = chartView.getHeight();
-        int firstInclusiveIndex = findFirstInclusiveIndex(leftBorder);
-        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder);
+        int firstInclusiveIndex = findFirstInclusiveIndex(leftBorder, true);
+        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder, true);
 
         for (Graph graph : data.getGraphs()) {
             List<GraphItem> graphItems = graph.getItems();
@@ -289,9 +295,9 @@ public class ChartManager {
             if (firstInclusiveIndex > 0) {
                 float startYPercentage = calcYAtXByTwoPoints(
                         leftBorder,
-                        data.getDatePoints().get(firstInclusiveIndex - 1).getPercent(),
+                        applyXMargin(data.getDatePoints().get(firstInclusiveIndex - 1).getPercent()),
                         graphItems.get(firstInclusiveIndex - 1).getPercent(),
-                        data.getDatePoints().get(firstInclusiveIndex).getPercent(),
+                        applyXMargin(data.getDatePoints().get(firstInclusiveIndex).getPercent()),
                         graphItems.get(firstInclusiveIndex).getPercent()
                 );
                 start = new Pair<>(leftBorder, startYPercentage);
@@ -300,9 +306,9 @@ public class ChartManager {
             if (lastInclusiveIndex < graphItems.size() - 1) {
                 float endYPercentage = calcYAtXByTwoPoints(
                         rightBorder,
-                        data.getDatePoints().get(lastInclusiveIndex).getPercent(),
+                        applyXMargin(data.getDatePoints().get(lastInclusiveIndex).getPercent()),
                         graphItems.get(lastInclusiveIndex).getPercent(),
-                        data.getDatePoints().get(lastInclusiveIndex + 1).getPercent(),
+                        applyXMargin(data.getDatePoints().get(lastInclusiveIndex + 1).getPercent()),
                         graphItems.get(lastInclusiveIndex + 1).getPercent()
                 );
                 end = new Pair<>(rightBorder, endYPercentage);
@@ -312,7 +318,7 @@ public class ChartManager {
             if (start != null) items.add(start);
             for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
                 items.add(new Pair<>(
-                        data.getDatePoints().get(i).getPercent(),
+                        applyXMargin(data.getDatePoints().get(i).getPercent()),
                         graphItems.get(i).getPercent()
                 ));
             }
@@ -426,8 +432,8 @@ public class ChartManager {
     }
 
     private void animateZoom() {
-        float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize());
-        float[] totalRange = calculateTargetRange(0f, 1f);
+        float[] targetRange = calculateTargetRange(leftBorder, rightBorder, false);
+        float[] totalRange = calculateTargetRange(0f, 1f, false);
         List<Graph> graphs = data.getGraphs();
         YGuides targetGuides = new YGuides(yGuides(targetRange[0], targetRange[1]), true);
         if (!guideAlphas.containsKey(targetGuides)) {
@@ -503,12 +509,12 @@ public class ChartManager {
         animator.start();
     }
 
-    private float[] calculateTargetRange(float startXPercentage, float endXPercentage) {
+    private float[] calculateTargetRange(float startXPercentage, float endXPercentage, boolean withMargin) {
         float yMin = 1;
         float yMax = 0;
 
-        int firstInclusiveIndex = findFirstInclusiveIndex(startXPercentage);
-        int lastInclusiveIndex = findLastInclusiveIndex(endXPercentage);
+        int firstInclusiveIndex = findFirstInclusiveIndex(startXPercentage, withMargin);
+        int lastInclusiveIndex = findLastInclusiveIndex(endXPercentage, withMargin);
 
         for (Graph graph : data.getGraphs()) {
             if (!graph.isEnabled()) continue;
@@ -562,9 +568,12 @@ public class ChartManager {
         return animatedAlpha != null ? animatedAlpha : 1f;
     }
 
-    private int findFirstInclusiveIndex(float startXPercentage) {
+    private int findFirstInclusiveIndex(float startXPercentage, boolean respectMargin) {
         for (int i = 0; i < data.getDatePoints().size(); i++) {
             float value = data.getDatePoints().get(i).getPercent();
+            if (respectMargin) {
+                value = applyXMargin(value);
+            }
             if (value > startXPercentage || isFloatEquals(value, startXPercentage)) {
                 return i;
             }
@@ -572,14 +581,21 @@ public class ChartManager {
         return -1;
     }
 
-    private int findLastInclusiveIndex(float endXPercentage) {
+    private int findLastInclusiveIndex(float endXPercentage, boolean respectMargins) {
         for (int i = data.getDatePoints().size() - 1; i >= 0; i--) {
             float value = data.getDatePoints().get(i).getPercent();
+            if (respectMargins) {
+                value = applyXMargin(value);
+            }
             if (value < endXPercentage || isFloatEquals(value, endXPercentage)) {
                 return i;
             }
         }
         return -1;
+    }
+
+    private float applyXMargin(float x) {
+        return x * (1 - xMarginPercent * 2) + xMarginPercent;
     }
 
     private float calcYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
@@ -588,6 +604,10 @@ public class ChartManager {
 
     private boolean isFloatEquals(float f1, float f2) {
         return Math.abs(f1 - f2) < 0.0001;
+    }
+
+    private void recalculateXMargin() {
+        xMarginPercent = xMarginPx / (chartView.getWidth() / visiblePartSize());
     }
 
     public interface UpdateListener {
