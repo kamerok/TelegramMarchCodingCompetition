@@ -28,8 +28,7 @@ public class ChartView extends View {
 
     private Paint paint;
     private Paint guideLinePaint;
-    private Paint textPaint;
-    private Paint xTextPaint;
+    private Paint guideTextPaint;
     private Paint circlePaint;
     private Paint erasePaint;
     private Paint selectionPopupPaint;
@@ -38,7 +37,7 @@ public class ChartView extends View {
 
     private GraphDrawData drawData;
 
-    private float popupTopMargin;
+    private float viewPadding;
     private float popupWidth;
     private float popupVerticalPadding;
     private float popupHorizontalPadding;
@@ -80,14 +79,16 @@ public class ChartView extends View {
         this.drawData = drawData;
     }
 
-    public void setColors(int popupColor, int popupTextColor, int shadowColor) {
+    public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor) {
         selectionPopupPaint.setColor(popupColor);
         selectionPopupPaint.setShadowLayer(1, 0, 0, shadowColor);
         selectionPopupDatePaint.setColor(popupTextColor);
+        guideLinePaint.setColor(guideColor);
+        guideTextPaint.setColor(guideTextColor);
     }
 
     private void init() {
-        popupTopMargin = UnitConverter.dpToPx(16);
+        viewPadding = UnitConverter.dpToPx(16);
         popupWidth = UnitConverter.dpToPx(120);
         popupVerticalPadding = UnitConverter.dpToPx(10);
         popupHorizontalPadding = UnitConverter.dpToPx(16);
@@ -106,18 +107,13 @@ public class ChartView extends View {
 
         guideLinePaint = new Paint();
         guideLinePaint.setColor(Color.GRAY);
-        guideLinePaint.setStrokeWidth(4);
-        guideLinePaint.setAntiAlias(true);
+        guideLinePaint.setStrokeWidth(UnitConverter.dpToPx(1));
         guideLinePaint.setStyle(Paint.Style.STROKE);
 
-        textPaint = new Paint();
-        textPaint.setColor(Color.GRAY);
-        textPaint.setTextSize(40);
-
-        xTextPaint = new Paint();
-        xTextPaint.setColor(Color.GRAY);
-        xTextPaint.setTextSize(40);
-        xTextPaint.setTextAlign(Paint.Align.CENTER);
+        guideTextPaint = new Paint();
+        guideTextPaint.setColor(Color.GRAY);
+        guideTextPaint.setAntiAlias(true);
+        guideTextPaint.setTextSize(UnitConverter.dpToPx(14));
 
         circlePaint = new Paint();
         circlePaint.setColor(Color.GRAY);
@@ -133,31 +129,36 @@ public class ChartView extends View {
         selectionPopupDatePaint = new Paint();
         selectionPopupDatePaint.setColor(Color.BLACK);
         selectionPopupDatePaint.setTextSize(popupDateSize);
+        selectionPopupDatePaint.setAntiAlias(true);
         selectionPopupDatePaint.setFakeBoldText(true);
 
         selectionPopupValuePaint = new Paint();
         selectionPopupValuePaint.setTextSize(popupValueSize);
+        selectionPopupValuePaint.setAntiAlias(true);
         selectionPopupValuePaint.setFakeBoldText(true);
     }
 
     private void render(Canvas canvas, GraphDrawData drawData) {
         List<DrawYGuides> drawYGuides = drawData.getDrawYGuides();
+        guideTextPaint.setTextAlign(Paint.Align.LEFT);
         for (int i = 0; i < drawYGuides.size(); i++) {
             DrawYGuides drawYGuide = drawYGuides.get(i);
             guideLinePaint.setAlpha(drawYGuide.getAlpha());
-            textPaint.setAlpha(drawYGuide.getAlpha());
+            guideTextPaint.setAlpha(drawYGuide.getAlpha());
             canvas.drawLines(drawYGuide.getyGuides(), guideLinePaint);
             List<DrawText> texts = drawYGuide.getTexts();
             for (int j = 0; j < texts.size(); j++) {
                 DrawText text = texts.get(j);
-                canvas.drawText(text.getText(), text.getX(), text.getY(), textPaint);
+                canvas.drawText(text.getText(), text.getX(), text.getY(), guideTextPaint);
             }
         }
         drawSelectionLine(canvas, drawData);
         List<DrawText> xLabels = drawData.getxLabels();
+        guideTextPaint.setAlpha(255);
+        guideTextPaint.setTextAlign(Paint.Align.CENTER);
         for (int i = 0; i < xLabels.size(); i++) {
             DrawText text = xLabels.get(i);
-            canvas.drawText(text.getText(), text.getX(), text.getY(), xTextPaint);
+            canvas.drawText(text.getText(), text.getX(), text.getY(), guideTextPaint);
         }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
             DrawGraph graph = drawData.getDrawGraphs().get(i);
@@ -178,7 +179,8 @@ public class ChartView extends View {
             guideLinePaint.setAlpha(255);
             canvas.drawLine(
                     drawData.getDrawSelection().getSelection(), 0,
-                    drawData.getDrawSelection().getSelection(), getHeight(),
+                    //TODO: is this safe?
+                    drawData.getDrawSelection().getSelection(), drawData.getDrawYGuides().get(0).getyGuides()[3],
                     guideLinePaint
             );
         }
@@ -202,7 +204,7 @@ public class ChartView extends View {
         } else {
             right = right + popupWidth;
         }
-        float top = popupTopMargin;
+        float top = viewPadding;
         float height = popupVerticalPadding * 2 + popupDateSize + popupValueSize * values.size() + popupValueMargin * (values.size() - 1) + popupDateMargin;
         canvas.drawRoundRect(left, top, right, height + top, popupCornerRadius, popupCornerRadius, selectionPopupPaint);
         canvas.drawText(popup.getDateText(), left + popupHorizontalPadding, top + popupDateSize + popupVerticalPadding, selectionPopupDatePaint);

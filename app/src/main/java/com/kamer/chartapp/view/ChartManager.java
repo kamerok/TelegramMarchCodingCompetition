@@ -22,6 +22,7 @@ import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
+import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -323,6 +324,7 @@ public class ChartManager {
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
+        //TODO: move it somewhere
         List<DrawYGuides> drawYGuides = new ArrayList<>();
         for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
             YGuides guide = yGuidesFloatEntry.getKey();
@@ -330,13 +332,13 @@ public class ChartManager {
             List<DrawText> drawTexts = new ArrayList<>();
             for (int i = 0; i < guide.getPercent().length; i++) {
                 float y = chartView.getHeight() - chartView.getHeight() * calcPercent(guide.getPercent()[i], minY, maxY);
-                yLines[i * 4] = 0;
+                yLines[i * 4] = UnitConverter.dpToPx(16);
                 yLines[i * 4 + 1] = y;
-                yLines[i * 4 + 2] = chartView.getWidth();
+                yLines[i * 4 + 2] = chartView.getWidth() - UnitConverter.dpToPx(16);
                 yLines[i * 4 + 3] = y;
 
                 String text = ((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue()) + "";
-                drawTexts.add(new DrawText(text, 0, y));
+                drawTexts.add(new DrawText(text, UnitConverter.dpToPx(16), y - UnitConverter.dpToPx(8)));
             }
             drawYGuides.add(new DrawYGuides(yLines, drawTexts, ((int) (yGuidesFloatEntry.getValue() * 255))));
         }

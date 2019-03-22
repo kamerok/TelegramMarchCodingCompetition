@@ -51,6 +51,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
     private int frameColor;
     private int popupColor;
     private int popupShadowColor;
+    private int guideColor;
+    private int guideTextColor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +73,12 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         frameColor = getResources().getColor(R.color.colorDarkFrame);
         popupColor = getResources().getColor(R.color.colorDarkPopup);
         popupShadowColor = getResources().getColor(R.color.colorDarkPopupShadow);
+        guideColor = getResources().getColor(R.color.colorDarkGuide);
+        guideTextColor = getResources().getColor(R.color.colorDarkGuideText);
 
         setColors(primaryColor, darkColor, backgroundColor, textColor);
-        chartView.setColors(popupColor, textColor, popupShadowColor);
+        chartView.setColors(popupColor, textColor, popupShadowColor, guideColor, guideTextColor);
+        chartView.invalidate();
 
         List<InputData> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
@@ -123,6 +128,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         int targetFrameColor;
         int targetPopupColor;
         int targetPopupShadowColor;
+        int targetGuideColor;
+        int targetGuideTextColor;
         if (isDarkTheme) {
             menu.getItem(0).setIcon(R.drawable.ic_brightness_7_black_24dp);
             targetPrimaryColor = getResources().getColor(R.color.colorDarkPrimary);
@@ -133,6 +140,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
             targetFrameColor = getResources().getColor(R.color.colorDarkFrame);
             targetPopupColor = getResources().getColor(R.color.colorDarkPopup);
             targetPopupShadowColor = getResources().getColor(R.color.colorDarkPopupShadow);
+            targetGuideColor = getResources().getColor(R.color.colorDarkGuide);
+            targetGuideTextColor = getResources().getColor(R.color.colorDarkGuideText);
         } else {
             menu.getItem(0).setIcon(R.drawable.moon);
             targetPrimaryColor = getResources().getColor(R.color.colorPrimary);
@@ -143,10 +152,12 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
             targetFrameColor = getResources().getColor(R.color.colorFrame);
             targetPopupColor = getResources().getColor(R.color.colorPopup);
             targetPopupShadowColor = getResources().getColor(R.color.colorPopupShadow);
+            targetGuideColor = getResources().getColor(R.color.colorGuide);
+            targetGuideTextColor = getResources().getColor(R.color.colorGuideText);
         }
 
 
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[8];
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[10];
         properties[0] = PropertyValuesHolder.ofObject("primary", new ArgbEvaluator(), primaryColor, targetPrimaryColor);
         properties[1] = PropertyValuesHolder.ofObject("primaryDark", new ArgbEvaluator(), darkColor, targetDarkColor);
         properties[2] = PropertyValuesHolder.ofObject("background", new ArgbEvaluator(), backgroundColor, targetBackgroundColor);
@@ -155,6 +166,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         properties[5] = PropertyValuesHolder.ofObject("frame", new ArgbEvaluator(), frameColor, targetFrameColor);
         properties[6] = PropertyValuesHolder.ofObject("popup", new ArgbEvaluator(), popupColor, targetPopupColor);
         properties[7] = PropertyValuesHolder.ofObject("popupShadow", new ArgbEvaluator(), popupShadowColor, targetPopupShadowColor);
+        properties[8] = PropertyValuesHolder.ofObject("guide", new ArgbEvaluator(), guideColor, targetGuideColor);
+        properties[9] = PropertyValuesHolder.ofObject("guideText", new ArgbEvaluator(), guideTextColor, targetGuideTextColor);
         if (themeAnimator != null) {
             themeAnimator.cancel();
         }
@@ -173,6 +186,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                 int newFrameColor = (int) valueAnimator.getAnimatedValue("frame");
                 int newPopupColor = (int) valueAnimator.getAnimatedValue("popup");
                 int newPopupShadowColor = (int) valueAnimator.getAnimatedValue("popupShadow");
+                int newGuideColor = (int) valueAnimator.getAnimatedValue("guide");
+                int newGuideTextColor = (int) valueAnimator.getAnimatedValue("guideText");
                 setColors(
                         newPrimaryColor,
                         newDarkColor,
@@ -181,7 +196,7 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                 );
                 previewMaskView.setColors(newOverlayColor, newFrameColor);
                 previewMaskView.invalidate();
-                chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor);
+                chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor, newGuideColor, newGuideTextColor);
                 chartView.invalidate();
 
                 primaryColor = newPrimaryColor;
@@ -192,6 +207,8 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                 frameColor = newFrameColor;
                 popupColor = newPopupColor;
                 popupShadowColor = newPopupShadowColor;
+                guideColor = newGuideColor;
+                guideTextColor = newGuideTextColor;
             }
         });
         themeAnimator = animator;

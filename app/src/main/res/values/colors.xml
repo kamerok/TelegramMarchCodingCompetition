@@ -21,4 +21,8 @@
     <color name="colorPopupShadow">#888888</color>
 
     <color name="colorDarkText">#F2F2F2</color>
+    <color name="colorGuide">#E2E2E4</color>
+    <color name="colorDarkGuide">#131921</color>
+    <color name="colorGuideText">#7F8C94</color>
+    <color name="colorDarkGuideText">#3F4E5D</color>
 </resources>
