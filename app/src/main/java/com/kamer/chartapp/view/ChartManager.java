@@ -105,7 +105,7 @@ public class ChartManager {
             public void run() {
                 ChartManager.this.data = data;
                 float[] targetRange = calculateTargetRange(1 - (visiblePartSize() + pan), 1 - (visiblePartSize() + pan) + visiblePartSize(), true);
-                guideAlphas.put(new YGuides(yGuides(targetRange[0], targetRange[1]), true), 1f);
+                guideAlphas.put(new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true), 1f);
 
                 xAlphas = new float[data.getDatePoints().size()];
 
@@ -394,7 +394,7 @@ public class ChartManager {
         chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels, drawSelection));
     }
 
-    private float[] yGuides(float minY, float maxY) {
+    private float[] calculateYGuides(float minY, float maxY) {
         int count = 6;
         float[] guides = new float[count];
         float segment = Math.abs(maxY - minY) / count;
@@ -518,7 +518,7 @@ public class ChartManager {
         float[] targetRange = calculateTargetRange(leftBorder, rightBorder, false);
         float[] totalRange = calculateTargetRange(0f, 1f, false);
         List<Graph> graphs = data.getGraphs();
-        YGuides targetGuides = new YGuides(yGuides(targetRange[0], targetRange[1]), true);
+        YGuides targetGuides = new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true);
         if (!guideAlphas.containsKey(targetGuides)) {
             guideAlphas.put(targetGuides, 0f);
         }
