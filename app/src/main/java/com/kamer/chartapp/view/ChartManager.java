@@ -53,7 +53,6 @@ public class ChartManager {
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float minY;
     private float maxY = 1;
-    private float totalMinY;
     private float totalMaxY = 1;
     private DrawSelection drawSelection;
 
@@ -425,10 +424,16 @@ public class ChartManager {
         for (Graph graph : graphs) {
             List<Pair<Float, Float>> graphItems = new ArrayList<>();
             for (int i = 0; i < graph.getItems().size(); i++) {
-                graphItems.add(new Pair<>(data.getDatePoints().get(i).getPercent(), graph.getItems().get(i).getPercent()));
+                float percent = graph.getItems().get(i).getPercent();
+                long value = (long) ((data.getMaxValue() - data.getMinValue()) * percent + data.getMinValue());
+                graphItems.add(new Pair<>(
+                        data.getDatePoints().get(i).getPercent(),
+                        //to get 0 based zoom
+                        value / (float) data.getMaxValue()
+                ));
             }
 
-            Path path = getPathForGraphItems(graphItems, width, height, totalMinY, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
+            Path path = getPathForGraphItems(graphItems, width, height, 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
 
             float alpha = getAlpha(graph.getName());
             result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
@@ -479,7 +484,7 @@ public class ChartManager {
     }
 
     private void animateDates() {
-        if (datesAnimation!= null && datesAnimation.isRunning()) return;
+        if (datesAnimation != null && datesAnimation.isRunning()) return;
         float[] targetX = new float[xAlphas.length];
         for (int i = 0; i < xAlphas.length; i++) {
             targetX[i] = datePointsIndexes.contains(i) ? 1f : 0f;
@@ -533,7 +538,7 @@ public class ChartManager {
         List<Graph> graphs = data.getGraphs();
         float[] percents = calculateYGuides(targetRange[0], targetRange[1]);
         YGuides targetGuides = new YGuides(percents, true);
-        targetRange = new float[] {percents[0], targetRange[1]};
+        targetRange = new float[]{percents[0], targetRange[1]};
         if (!guideAlphas.containsKey(targetGuides)) {
             guideAlphas.put(targetGuides, 0f);
         }
@@ -546,19 +551,18 @@ public class ChartManager {
             }
         }
 
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 4 + guideAlphas.size()];
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 3 + guideAlphas.size()];
         properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
         properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
-        properties[2] = PropertyValuesHolder.ofFloat("totalMinY", totalMinY, totalRange[0]);
-        properties[3] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, totalRange[1]);
+        properties[2] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, totalRange[1]);
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
             String name = graph.getName();
-            properties[i + 4] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
+            properties[i + 3] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
         }
         int i = 0;
         for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
-            properties[i + 4 + graphs.size()] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
+            properties[i + 3 + graphs.size()] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
             i++;
         }
         if (currentAnimation != null) {
@@ -573,7 +577,6 @@ public class ChartManager {
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 float newMin = (float) valueAnimator.getAnimatedValue("minY");
                 float newMax = (float) valueAnimator.getAnimatedValue("maxY");
-                float newTotalMin = (float) valueAnimator.getAnimatedValue("totalMinY");
                 float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
                 HashMap<String, Float> newAlphas = new HashMap<>();
                 for (Graph graph : data.getGraphs()) {
@@ -591,7 +594,6 @@ public class ChartManager {
                 }
                 minY = newMin;
                 maxY = newMax;
-                totalMinY = newTotalMin;
                 totalMaxY = newTotalMax;
 
                 alphas = newAlphas;
