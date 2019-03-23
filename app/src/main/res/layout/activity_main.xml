@@ -15,7 +15,7 @@
         android:layout_marginEnd="16dp"
         android:orientation="horizontal" />
 
-    <com.kamer.chartapp.view.ChartView
+    <com.kamer.chartapp.view.surface.ChartView
         android:id="@+id/view_chart"
         android:layout_width="match_parent"
         android:layout_height="300dp"

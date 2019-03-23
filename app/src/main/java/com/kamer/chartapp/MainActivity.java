@@ -6,6 +6,7 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.Menu;
@@ -21,10 +22,10 @@ import android.widget.RadioGroup;
 import com.kamer.chartapp.data.DataProvider;
 import com.kamer.chartapp.data.InputData;
 import com.kamer.chartapp.view.ChartManager;
-import com.kamer.chartapp.view.ChartView;
 import com.kamer.chartapp.view.PreviewMaskView;
 import com.kamer.chartapp.view.PreviewView;
 import com.kamer.chartapp.view.data.Graph;
+import com.kamer.chartapp.view.surface.ChartView;
 import com.kamer.chartapp.view.utils.DataConverter;
 
 import java.util.List;
@@ -77,8 +78,9 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
         guideTextColor = getResources().getColor(R.color.colorDarkGuideText);
 
         setColors(primaryColor, darkColor, backgroundColor, textColor);
-        chartView.setColors(popupColor, textColor, popupShadowColor, guideColor, guideTextColor);
-        chartView.invalidate();
+        chartView.setColors(popupColor, textColor, popupShadowColor, guideColor, guideTextColor, backgroundColor);
+        chartView.setZOrderOnTop(true);
+        chartView.getHolder().setFormat(PixelFormat.TRANSLUCENT);
 
         List<InputData> data = DataProvider.getData();
         for (int i = 0; i < data.size(); i++) {
@@ -196,8 +198,7 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                 );
                 previewMaskView.setColors(newOverlayColor, newFrameColor);
                 previewMaskView.invalidate();
-                chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor, newGuideColor, newGuideTextColor);
-                chartView.invalidate();
+                chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor, newGuideColor, newGuideTextColor, newBackgroundColor);
 
                 primaryColor = newPrimaryColor;
                 darkColor = newDarkColor;

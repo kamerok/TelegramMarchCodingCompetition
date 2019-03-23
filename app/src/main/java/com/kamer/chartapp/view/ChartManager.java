@@ -24,6 +24,7 @@ import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
+import com.kamer.chartapp.view.surface.ChartView;
 import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.ArrayList;
@@ -238,7 +239,6 @@ public class ChartManager {
         drawSelection = new DrawSelection(realX, points, popup);
 
         calculateDrawData();
-        chartView.invalidate();
     }
 
     private void setPan(float pan) {
@@ -518,7 +518,6 @@ public class ChartManager {
                     }
                 }
                 calculateDrawData();
-                chartView.invalidate();
             }
         });
         animator.addListener(new AnimatorListenerAdapter() {
@@ -597,7 +596,6 @@ public class ChartManager {
 
                 alphas = newAlphas;
                 calculateDrawData();
-                chartView.invalidate();
 
                 calculatePreviewDrawData(data.getGraphs());
                 previewView.invalidate();

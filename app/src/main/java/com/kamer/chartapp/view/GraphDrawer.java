@@ -1,30 +1,26 @@
 package com.kamer.chartapp.view;
 
-import android.annotation.TargetApi;
-import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.os.Build;
-import android.util.AttributeSet;
 import android.util.Pair;
-import android.view.View;
 
+import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
+import com.kamer.chartapp.view.data.draw.DrawText;
 import com.kamer.chartapp.view.data.draw.DrawYGuides;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
-import com.kamer.chartapp.view.data.draw.DrawGraph;
-import com.kamer.chartapp.view.data.draw.DrawText;
 import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.List;
 
+public class GraphDrawer {
 
-public class ChartView extends View {
+    private int backgroundColor;
 
     private Paint paint;
     private Paint guideLinePaint;
@@ -34,8 +30,6 @@ public class ChartView extends View {
     private Paint selectionPopupPaint;
     private Paint selectionPopupDatePaint;
     private Paint selectionPopupValuePaint;
-
-    private GraphDrawData drawData;
 
     private float viewPadding;
 
@@ -51,47 +45,7 @@ public class ChartView extends View {
     private float popupValueMargin;
     private float popupDateMargin;
 
-    public ChartView(Context context) {
-        super(context);
-        init();
-    }
-
-    public ChartView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
-    public ChartView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public ChartView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init();
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (drawData != null) {
-            render(canvas, drawData);
-        }
-    }
-
-    public void setDrawData(GraphDrawData drawData) {
-        this.drawData = drawData;
-    }
-
-    public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor) {
-        selectionPopupPaint.setColor(popupColor);
-        selectionPopupPaint.setShadowLayer(1, 0, 0, shadowColor);
-        selectionPopupDatePaint.setColor(popupTextColor);
-        guideLinePaint.setColor(guideColor);
-        guideTextPaint.setColor(guideTextColor);
-    }
-
-    private void init() {
+    public GraphDrawer() {
         viewPadding = UnitConverter.dpToPx(16);
         lineWidth = UnitConverter.dpToPx(2);
         circleRadius = UnitConverter.dpToPx(5);
@@ -144,7 +98,18 @@ public class ChartView extends View {
         selectionPopupValuePaint.setFakeBoldText(true);
     }
 
-    private void render(Canvas canvas, GraphDrawData drawData) {
+    public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor, int backgroundColor) {
+        selectionPopupPaint.setColor(popupColor);
+        selectionPopupPaint.setShadowLayer(1, 0, 0, shadowColor);
+        selectionPopupDatePaint.setColor(popupTextColor);
+        guideLinePaint.setColor(guideColor);
+        guideTextPaint.setColor(guideTextColor);
+
+        this.backgroundColor = backgroundColor;
+    }
+
+    public void render(Canvas canvas, GraphDrawData drawData) {
+        canvas.drawColor(backgroundColor);
         List<DrawYGuides> drawYGuides = drawData.getDrawYGuides();
         guideTextPaint.setTextAlign(Paint.Align.LEFT);
         for (int i = 0; i < drawYGuides.size(); i++) {
@@ -220,4 +185,5 @@ public class ChartView extends View {
             canvas.drawText(drawText.first, left + popupHorizontalPadding, top + popupDateSize + popupVerticalPadding + popupDateMargin + popupValueMargin * (i) + popupValueSize * (i + 1), selectionPopupValuePaint);
         }
     }
+
 }
