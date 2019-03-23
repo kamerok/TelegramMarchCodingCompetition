@@ -422,18 +422,16 @@ public class ChartManager {
         int height = previewView.getHeight();
 
         for (Graph graph : graphs) {
+            float percentDiff = (data.getMaxValue() - (data.getMaxValue() - data.getMinValue())) / (float) data.getMaxValue();
             List<Pair<Float, Float>> graphItems = new ArrayList<>();
             for (int i = 0; i < graph.getItems().size(); i++) {
-                float percent = graph.getItems().get(i).getPercent();
-                long value = (long) ((data.getMaxValue() - data.getMinValue()) * percent + data.getMinValue());
                 graphItems.add(new Pair<>(
                         data.getDatePoints().get(i).getPercent(),
-                        //to get 0 based zoom
-                        value / (float) data.getMaxValue()
+                        graph.getItems().get(i).getPercent()
                 ));
             }
 
-            Path path = getPathForGraphItems(graphItems, width, height, 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
+            Path path = getPathForGraphItems(graphItems, width, height, -percentDiff, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
 
             float alpha = getAlpha(graph.getName());
             result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
