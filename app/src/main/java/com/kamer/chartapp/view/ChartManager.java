@@ -374,7 +374,8 @@ public class ChartManager {
                 yLines[i * 4 + 2] = chartView.getWidth() - UnitConverter.dpToPx(16);
                 yLines[i * 4 + 3] = y;
 
-                String text = ((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue()) + "";
+                int value = Math.round((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue());
+                String text = value + "";
                 drawTexts.add(new DrawText(text, UnitConverter.dpToPx(16), y - UnitConverter.dpToPx(8), alpha));
             }
             drawYGuides.add(new DrawYGuides(yLines, drawTexts, alpha));
