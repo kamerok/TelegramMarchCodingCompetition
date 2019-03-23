@@ -44,7 +44,7 @@ public class DrawThread extends Thread{
             try {
                 canvas = surfaceHolder.lockCanvas(null);
                 synchronized (surfaceHolder) {
-                    if (drawData != null) {
+                    if (canvas != null && drawData != null) {
                         drawer.render(canvas, drawData);
                     }
                 }
