@@ -14,7 +14,7 @@ public class DrawThread extends Thread{
     private long prevTime;
 
     private GraphDrawData drawData;
-    public GraphDrawer drawer;
+    private GraphDrawer drawer;
 
     public DrawThread(GraphDrawer drawer, SurfaceHolder surfaceHolder){
         this.drawer = drawer;
