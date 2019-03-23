@@ -160,10 +160,10 @@ public class ChartView extends View {
         }
         drawSelectionLine(canvas, drawData);
         List<DrawText> xLabels = drawData.getxLabels();
-        guideTextPaint.setAlpha(255);
         guideTextPaint.setTextAlign(Paint.Align.CENTER);
         for (int i = 0; i < xLabels.size(); i++) {
             DrawText text = xLabels.get(i);
+            guideTextPaint.setAlpha(text.getAlpha());
             canvas.drawText(text.getText(), text.getX(), text.getY(), guideTextPaint);
         }
         for (int i = 0; i < drawData.getDrawGraphs().size(); i++) {
