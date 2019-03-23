@@ -65,6 +65,9 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor, int backgroundColor) {
         drawer.setColors(popupColor, popupTextColor, shadowColor, guideColor, guideTextColor, backgroundColor);
+        if (drawThread != null) {
+            drawThread.setDirty();
+        }
     }
 
     private void init() {

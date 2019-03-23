@@ -1,5 +1,7 @@
 package com.kamer.chartapp.view.data.draw;
 
+import java.util.Objects;
+
 public class DrawText {
 
     private String text;
@@ -38,5 +40,21 @@ public class DrawText {
                 ", y=" + y +
                 ", alpha=" + alpha +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DrawText drawText = (DrawText) o;
+        return Float.compare(drawText.x, x) == 0 &&
+                Float.compare(drawText.y, y) == 0 &&
+                alpha == drawText.alpha &&
+                Objects.equals(text, drawText.text);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(text, x, y, alpha);
     }
 }

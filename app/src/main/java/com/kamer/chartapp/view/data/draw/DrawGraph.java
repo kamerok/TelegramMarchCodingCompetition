@@ -2,6 +2,8 @@ package com.kamer.chartapp.view.data.draw;
 
 import android.graphics.Path;
 
+import java.util.Objects;
+
 
 public class DrawGraph {
 
@@ -34,5 +36,20 @@ public class DrawGraph {
                 ", path=" + path +
                 ", alpha=" + alpha +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DrawGraph drawGraph = (DrawGraph) o;
+        return color == drawGraph.color &&
+                alpha == drawGraph.alpha &&
+                Objects.equals(path, drawGraph.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, path, alpha);
     }
 }

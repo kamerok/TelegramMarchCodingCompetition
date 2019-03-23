@@ -1,26 +1,25 @@
 package com.kamer.chartapp.view.surface;
 
 import android.graphics.Canvas;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import com.kamer.chartapp.view.GraphDrawer;
 import com.kamer.chartapp.view.data.draw.GraphDrawData;
 
-public class DrawThread extends Thread{
+public class DrawThread extends Thread {
 
     final private SurfaceHolder surfaceHolder;
 
     private boolean runFlag = false;
-    private long prevTime;
+    private boolean isDirty = true;
 
     private GraphDrawData drawData;
     private GraphDrawer drawer;
 
-    public DrawThread(GraphDrawer drawer, SurfaceHolder surfaceHolder){
+    public DrawThread(GraphDrawer drawer, SurfaceHolder surfaceHolder) {
         this.drawer = drawer;
         this.surfaceHolder = surfaceHolder;
-
-        prevTime = System.currentTimeMillis();
     }
 
     public void setRunning(boolean run) {
@@ -28,30 +27,34 @@ public class DrawThread extends Thread{
     }
 
     public void setDrawData(GraphDrawData drawData) {
-        this.drawData = drawData;
+        if (!drawData.equals(this.drawData)) {
+            this.drawData = drawData;
+            isDirty = true;
+        }
+    }
+
+    public void setDirty() {
+        isDirty = true;
     }
 
     @Override
     public void run() {
         Canvas canvas;
         while (runFlag) {
-            long now = System.currentTimeMillis();
-            long elapsedTime = now - prevTime;
-            if (elapsedTime > 16){
-                prevTime = now;
-            }
-            canvas = null;
-            try {
-                canvas = surfaceHolder.lockCanvas(null);
-                synchronized (surfaceHolder) {
-                    if (canvas != null && drawData != null) {
-                        drawer.render(canvas, drawData);
+            synchronized (surfaceHolder) {
+                if (isDirty) {
+                    canvas = null;
+                    try {
+                        canvas = surfaceHolder.lockCanvas(null);
+                        if (canvas != null && drawData != null) {
+                            drawer.render(canvas, drawData);
+                            isDirty = false;
+                        }
+                    } finally {
+                        if (canvas != null) {
+                            surfaceHolder.unlockCanvasAndPost(canvas);
+                        }
                     }
-                }
-            }
-            finally {
-                if (canvas != null) {
-                    surfaceHolder.unlockCanvasAndPost(canvas);
                 }
             }
         }

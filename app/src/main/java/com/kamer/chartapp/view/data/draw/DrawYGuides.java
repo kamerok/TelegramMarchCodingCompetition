@@ -2,6 +2,7 @@ package com.kamer.chartapp.view.data.draw;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class DrawYGuides {
 
@@ -34,5 +35,22 @@ public class DrawYGuides {
                 ", texts=" + texts +
                 ", alpha=" + alpha +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DrawYGuides that = (DrawYGuides) o;
+        return alpha == that.alpha &&
+                Arrays.equals(yGuides, that.yGuides) &&
+                Objects.equals(texts, that.texts);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(texts, alpha);
+        result = 31 * result + Arrays.hashCode(yGuides);
+        return result;
     }
 }
