@@ -369,7 +369,7 @@ public class ChartManager {
             List<DrawText> drawTexts = new ArrayList<>();
             int alpha = (int) (yGuidesFloatEntry.getValue() * 255);
             for (int i = 0; i < guide.getPercent().length; i++) {
-                float y = chartView.getHeight() - chartView.getHeight() * calcPercent(guide.getPercent()[i], minY, maxY);
+                float y = calculateYFromPercent(chartView.getHeight(), guide.getPercent()[i], minY, maxY, PADDING_VERTICAL);
                 yLines[i * 4] = UnitConverter.dpToPx(16);
                 yLines[i * 4 + 1] = y;
                 yLines[i * 4 + 2] = chartView.getWidth() - UnitConverter.dpToPx(16);
@@ -396,10 +396,23 @@ public class ChartManager {
 
     private float[] calculateYGuides(float minY, float maxY) {
         int count = 6;
+        float bottomValue = (data.getMaxValue() - data.getMinValue()) * minY + data.getMinValue();
+        float top = (data.getMaxValue() - data.getMinValue()) * (maxY) + data.getMinValue();
+
+        int roundBottom = (int) Math.floor(bottomValue);
+        roundBottom = roundBottom / 10 * 10;
+        float bottomPercent = (float) (roundBottom - data.getMinValue()) / (data.getMaxValue() - data.getMinValue());
+
+        int roundTop = (int) Math.floor(top);
+        roundTop = roundTop / 10 * 10;
+        float topPercent = (float) (roundTop - data.getMinValue()) / (data.getMaxValue() - data.getMinValue());
+
+        float segment = Math.abs(topPercent - bottomPercent) / 5;
+
         float[] guides = new float[count];
-        float segment = Math.abs(maxY - minY) / count;
-        for (int i = 0; i < count; i++) {
-            guides[i] = segment * i + minY + segment / 2;
+        guides[0] = bottomPercent;
+        for (int i = 1; i < count; i++) {
+            guides[i] = guides[i - 1] + segment;
         }
         return guides;
     }
@@ -518,7 +531,9 @@ public class ChartManager {
         float[] targetRange = calculateTargetRange(leftBorder, rightBorder, false);
         float[] totalRange = calculateTargetRange(0f, 1f, false);
         List<Graph> graphs = data.getGraphs();
-        YGuides targetGuides = new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true);
+        float[] percents = calculateYGuides(targetRange[0], targetRange[1]);
+        YGuides targetGuides = new YGuides(percents, true);
+        targetRange = new float[] {percents[0], targetRange[1]};
         if (!guideAlphas.containsKey(targetGuides)) {
             guideAlphas.put(targetGuides, 0f);
         }
