@@ -249,25 +249,43 @@ public class ChartManager {
 
     private boolean isIndexFit(int index) {
         if (index >= data.getDatePoints().size()) return false;
-        float dateSize = 0.3f * visiblePartSize();
+        float dateSize = 0.13f * visiblePartSize();
         float percent = applyXMargin(data.getDatePoints().get(index).getPercent());
         return percent - dateSize / 2 > 0 && percent + dateSize / 2 < 1;
     }
 
+    private boolean isIndexesCollide(int index1, int index2) {
+        float dateSize = 0.13f * visiblePartSize();
+        float percent1 = applyXMargin(data.getDatePoints().get(index1).getPercent());
+        float percent2 = applyXMargin(data.getDatePoints().get(index2).getPercent());
+        return Math.abs(percent1 - percent2) < dateSize;
+    }
+
     private void recalculateDates() {
-        int startIndex = 0;
-        while (!isIndexFit(startIndex)) {
-            startIndex = startIndex * 2 + 1;
+        int lastIndex = data.getDatePoints().size() - 1;
+        int startIndex;
+        if (!datePointsIndexes.isEmpty()) {
+            startIndex = lastIndex - datePointsIndexes.get(0);
+        } else {
+            startIndex = 0;
+            while (!isIndexFit(startIndex)) {
+                startIndex++;
+            }
         }
         List<Integer> indexes = new ArrayList<>();
-        indexes.add(startIndex);
-        int nextIndex = startIndex * 2 + 1;
+        indexes.add(lastIndex - startIndex);
+        int nextIndex;
+        int i = 0;
+        do {
+            nextIndex = startIndex + (int) Math.pow(2, i);
+            i++;
+        } while ((!isIndexFit(nextIndex) || isIndexesCollide(startIndex, nextIndex)) && nextIndex < data.getDatePoints().size());
         if (isIndexFit(nextIndex)) {
-            indexes.add(nextIndex);
+            indexes.add(lastIndex - nextIndex);
             int diff = nextIndex - startIndex;
             int index = nextIndex + diff;
             while (isIndexFit(index)) {
-                indexes.add(index);
+                indexes.add(lastIndex - index);
                 index = index + diff;
             }
         }
