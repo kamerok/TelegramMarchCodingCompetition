@@ -69,7 +69,7 @@ public class PreviewView extends View {
         invalidate();
     }
 
-    public void set(float max) {
+    public void setMax(float max) {
         this.max = max;
         drawData = calculatePreviewDrawData();
         invalidate();

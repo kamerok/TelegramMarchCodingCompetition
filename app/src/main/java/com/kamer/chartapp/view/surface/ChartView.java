@@ -24,6 +24,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     private float minX;
     private float maxX;
     private float[] xAlphas;
+    private Map<YGuides, Float> guideAlphas;
 
     public ChartView(Context context) {
         super(context);
@@ -48,7 +49,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         drawThread = new DrawThread(drawer, getHolder());
-        drawThread.setData(data, minY, maxY, minX, maxX, xAlphas);
+        drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, guideAlphas);
         drawThread.setRunning(true);
         drawThread.start();
     }
@@ -73,15 +74,16 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, Map<YGuides, Float> guideAlphas) {
         this.data = data;
         this.minY = minY;
         this.maxY = maxY;
         this.minX = minX;
         this.maxX = maxX;
         this.xAlphas = xAlphas;
+        this.guideAlphas = guideAlphas;
         if (drawThread != null) {
-            drawThread.setData(data, minY, maxY, minX, maxX, xAlphas);
+            drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, guideAlphas);
         }
     }
 

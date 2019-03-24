@@ -60,14 +60,14 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
-    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, Map<YGuides, Float> guideAlphas) {
         this.data = data;
         this.minY = minY;
         this.maxY = maxY;
         this.minX = minX;
         this.maxX = maxX;
         this.graphAlphas = new HashMap<>();
-        this.guideAlphas = new HashMap<>();
+        this.guideAlphas = guideAlphas;
         this.xAlphas = xAlphas;
         this.drawSelection = null;
         isDirty = true;
@@ -144,7 +144,6 @@ public class DrawThread extends Thread {
         }
 
 
-        //TODO: move it somewhere
         List<DrawYGuides> drawYGuides = new ArrayList<>();
         for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
             YGuides guide = yGuidesFloatEntry.getKey();

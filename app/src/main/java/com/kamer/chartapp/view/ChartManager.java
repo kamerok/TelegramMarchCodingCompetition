@@ -1,6 +1,5 @@
 package com.kamer.chartapp.view;
 
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.util.Pair;
 import android.view.MotionEvent;
@@ -8,26 +7,24 @@ import android.view.View;
 
 import com.kamer.chartapp.view.animator.DateAlphaAnimator;
 import com.kamer.chartapp.view.animator.GraphAlphaAnimator;
+import com.kamer.chartapp.view.animator.VerticalZoomAnimator;
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
-import com.kamer.chartapp.view.data.YGuides;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
 import com.kamer.chartapp.view.surface.ChartView;
-import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
+import static com.kamer.chartapp.view.utils.FloatUtils.isFloatEquals;
 
 public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
-    private static final float PADDING_VERTICAL = UnitConverter.dpToPx(32);
 
     private ChartView chartView;
     private PreviewView previewView;
@@ -42,15 +39,7 @@ public class ChartManager {
 
     private GraphAlphaAnimator graphAlphaAnimator;
     private DateAlphaAnimator dateAlphaAnimator;
-
-    private Map<YGuides, Float> guideAlphas = new HashMap<>();
-    private float minY;
-    private float maxY = 1;
-    private float totalMaxY = 1;
-
-    private ValueAnimator currentAnimation;
-
-    private float xMarginPercent;
+    private VerticalZoomAnimator verticalZoomAnimator;
 
     @SuppressLint("ClickableViewAccessibility")
     public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
@@ -61,6 +50,7 @@ public class ChartManager {
 
         this.graphAlphaAnimator = new GraphAlphaAnimator(previewView, chartView);
         this.dateAlphaAnimator = new DateAlphaAnimator(chartView);
+        this.verticalZoomAnimator = new VerticalZoomAnimator(chartView, previewView);
 
         previewMaskView.setListener(new PreviewMaskView.Listener() {
             @Override
@@ -100,22 +90,19 @@ public class ChartManager {
 
                 graphAlphaAnimator.setData(data.getGraphs());
                 dateAlphaAnimator.setData(data.getDatePoints(), leftBorder, rightBorder);
+                verticalZoomAnimator.setData(data, leftBorder, rightBorder);
 
-                float[] targetRange = calculateTargetRange(leftBorder, rightBorder, true);
-                minY = targetRange[0];
-                maxY = targetRange[1];
-                guideAlphas.clear();
-                guideAlphas.put(new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true), 1f);
-
-                recalculateXMargin();
-
-                totalMaxY = calculateTargetRange(0, 1, false)[1];
-
-                //TODO: initial zoom
-
-                chartView.setData(data, minY, maxY, leftBorder, rightBorder, dateAlphaAnimator.getXAlphas());
+                chartView.setData(
+                        data,
+                        verticalZoomAnimator.getMinY(),
+                        verticalZoomAnimator.getMaxY(),
+                        leftBorder,
+                        rightBorder,
+                        dateAlphaAnimator.getXAlphas(),
+                        verticalZoomAnimator.getGuideAlphas()
+                );
                 previewMaskView.setBorders(leftBorder, rightBorder);
-                previewView.setData(data.getGraphs(), totalMaxY);
+                previewView.setData(data.getGraphs(), verticalZoomAnimator.getTotalMaxY());
                 syncGraphEnabledStatus();
             }
         });
@@ -128,6 +115,7 @@ public class ChartManager {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 chartView.clearSelection();
                 graphAlphaAnimator.animate();
+                verticalZoomAnimator.animate(leftBorder, rightBorder);
                 syncGraphEnabledStatus();
                 return;
             }
@@ -146,7 +134,8 @@ public class ChartManager {
             this.leftBorder = newLeft;
             chartView.clearSelection();
             onUpdateMinX();
-            onUpdateZoom();
+            onUpdateZoomX();
+            onUpdateZoomY();
         }
     }
 
@@ -166,9 +155,10 @@ public class ChartManager {
         if (this.rightBorder != newRight || pan != newPan) {
             this.rightBorder = newRight;
             this.pan = newPan;
-            chartView.clearSelection();;
+            chartView.clearSelection();
             onUpdateMaxX();
-            onUpdateZoom();
+            onUpdateZoomX();
+            onUpdateZoomY();
         }
     }
 
@@ -187,6 +177,7 @@ public class ChartManager {
             chartView.clearSelection();
             onUpdateMinX();
             onUpdateMaxX();
+            onUpdateZoomY();
         }
     }
 
@@ -195,8 +186,8 @@ public class ChartManager {
         float percent = visiblePartSize() * localPercent + leftBorder;
 
         int selectedIndex = 0;
-        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder, true);
-        for (int i = findFirstInclusiveIndex(leftBorder, true); i < lastInclusiveIndex; i++) {
+        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder);
+        for (int i = findFirstInclusiveIndex(leftBorder); i < lastInclusiveIndex; i++) {
             float current = applyXMargin(data.getDatePoints().get(i).getPercent());
             float next = applyXMargin(data.getDatePoints().get(i + 1).getPercent());
             if (percent < current) {
@@ -235,7 +226,7 @@ public class ChartManager {
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
             GraphItem graphItem = graph.getItems().get(selectedIndex);
-            float realY = calculateYFromPercent(chartView.getHeight(), graphItem.getPercent(), minY, maxY, PADDING_VERTICAL);
+            float realY = calculateYFromPercent(chartView.getHeight(), graphItem.getPercent(), verticalZoomAnimator.getMinY(), verticalZoomAnimator.getMaxY());
             points.add(new DrawSelectionPoint(realX, realY, graph.getColor()));
             texts.add(new Pair<>(graphItem.getValue() + "", graph.getColor()));
         }
@@ -259,50 +250,21 @@ public class ChartManager {
         previewMaskView.setBorders(leftBorder, rightBorder);
     }
 
-    private void onUpdateZoom() {
+    private void onUpdateZoomX() {
         dateAlphaAnimator.animate(leftBorder, rightBorder);
-        recalculateXMargin();
+    }
+
+    private void onUpdateZoomY() {
+        verticalZoomAnimator.animate(leftBorder, rightBorder);
     }
 
     private void syncGraphEnabledStatus() {
         updateListener.onUpdate(data.getGraphs());
     }
 
-    private void updateAllChartValues() {
-        chartView.set(minY, maxY, guideAlphas);
-    }
-
-    private void updateAllPreviewValues() {
-        previewView.set(totalMaxY);
-        previewMaskView.setBorders(leftBorder, rightBorder);
-    }
-
-    private float[] calculateYGuides(float minY, float maxY) {
-        int count = 6;
-        float bottomValue = (data.getMaxValue() - data.getMinValue()) * minY + data.getMinValue();
-        float top = (data.getMaxValue() - data.getMinValue()) * (maxY) + data.getMinValue();
-
-        int roundBottom = (int) Math.floor(bottomValue);
-        roundBottom = roundBottom / 10 * 10;
-        float bottomPercent = (float) (roundBottom - data.getMinValue()) / (data.getMaxValue() - data.getMinValue());
-
-        int roundTop = (int) Math.floor(top);
-        roundTop = roundTop / 10 * 10;
-        float topPercent = (float) (roundTop - data.getMinValue()) / (data.getMaxValue() - data.getMinValue());
-
-        float segment = Math.abs(topPercent - bottomPercent) / 5;
-
-        float[] guides = new float[count];
-        guides[0] = bottomPercent;
-        for (int i = 1; i < count; i++) {
-            guides[i] = guides[i - 1] + segment;
-        }
-        return guides;
-    }
-
-    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, float padding) {
-        int heightWithPadding = height - (int) padding * 2;
-        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + (int) padding;
+    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
+        int heightWithPadding = height - (int) Constants.PADDING_VERTICAL * 2;
+        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + (int) Constants.PADDING_VERTICAL;
     }
 
     private float visiblePartSize() {
@@ -313,139 +275,9 @@ public class ChartManager {
         return (value - start) / (end - start);
     }
 
-    /*private void animateZoom() {
-        float[] targetRange = calculateTargetRange(leftBorder, rightBorder, false);
-        float[] totalRange = calculateTargetRange(0f, 1f, false);
-        List<Graph> graphs = data.getGraphs();
-        float[] percents = calculateYGuides(targetRange[0], targetRange[1]);
-        YGuides targetGuides = new YGuides(percents, true);
-        targetRange = new float[]{percents[0], targetRange[1]};
-        if (!guideAlphas.containsKey(targetGuides)) {
-            guideAlphas.put(targetGuides, 0f);
-        }
-        List<YGuides> keys = new ArrayList<>(guideAlphas.keySet());
-        for (YGuides guides : keys) {
-            if (!targetGuides.equals(guides) && guides.isActive()) {
-                float value = guideAlphas.get(guides);
-                guideAlphas.remove(guides);
-                guideAlphas.put(new YGuides(guides.getPercent(), false), value);
-            }
-        }
-
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size() + 3 + guideAlphas.size()];
-        properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
-        properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
-        properties[2] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, totalRange[1]);
-        for (int i = 0; i < graphs.size(); i++) {
-            Graph graph = graphs.get(i);
-            String name = graph.getName();
-            properties[i + 3] = PropertyValuesHolder.ofFloat(name, getAlpha(name), graph.isEnabled() ? 1f : 0f);
-        }
-        int i = 0;
-        for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
-            properties[i + 3 + graphs.size()] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
-            i++;
-        }
-        if (currentAnimation != null) {
-            currentAnimation.cancel();
-        }
-        ValueAnimator animator = new ValueAnimator();
-        animator.setValues(properties);
-        animator.setDuration(100);
-
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                float newMin = (float) valueAnimator.getAnimatedValue("minY");
-                float newMax = (float) valueAnimator.getAnimatedValue("maxY");
-                float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
-                HashMap<String, Float> newAlphas = new HashMap<>();
-                for (Graph graph : data.getGraphs()) {
-                    Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
-                    float alpha = animatedValue != null ? (float) animatedValue : 1f;
-                    newAlphas.put(graph.getName(), alpha);
-                }
-                List<YGuides> keys = new ArrayList<>(guideAlphas.keySet());
-                for (YGuides guides : keys) {
-                    float value = (float) valueAnimator.getAnimatedValue(guides.hashCode() + "");
-                    guideAlphas.remove(guides);
-                    if (!(value == 0 && !guides.isActive())) {
-                        guideAlphas.put(guides, value);
-                    }
-                }
-                minY = newMin;
-                maxY = newMax;
-                totalMaxY = newTotalMax;
-
-                alphas = newAlphas;
-                updateAllChartValues();
-                updateAllPreviewValues();
-            }
-        });
-        currentAnimation = animator;
-        animator.start();
-    }*/
-
-    private float[] calculateTargetRange(float startXPercentage, float endXPercentage, boolean withMargin) {
-        float yMin = 1;
-        float yMax = 0;
-
-        int firstInclusiveIndex = findFirstInclusiveIndex(startXPercentage, withMargin);
-        int lastInclusiveIndex = findLastInclusiveIndex(endXPercentage, withMargin);
-
-        for (Graph graph : data.getGraphs()) {
-            if (!graph.isEnabled()) continue;
-            List<GraphItem> graphItems = graph.getItems();
-
-            if (firstInclusiveIndex > 0) {
-                float startYPercentage = calcYAtXByTwoPoints(
-                        startXPercentage,
-                        data.getDatePoints().get(firstInclusiveIndex - 1).getPercent(),
-                        graphItems.get(firstInclusiveIndex - 1).getPercent(),
-                        data.getDatePoints().get(firstInclusiveIndex).getPercent(),
-                        graphItems.get(firstInclusiveIndex).getPercent()
-                );
-                if (startYPercentage < yMin) {
-                    yMin = startYPercentage;
-                } else if (startYPercentage > yMax) {
-                    yMax = startYPercentage;
-                }
-            }
-
-            if (lastInclusiveIndex < graph.getItems().size() - 1) {
-                float endYPercentage = calcYAtXByTwoPoints(
-                        endXPercentage,
-                        data.getDatePoints().get(lastInclusiveIndex).getPercent(),
-                        graphItems.get(lastInclusiveIndex).getPercent(),
-                        data.getDatePoints().get(lastInclusiveIndex + 1).getPercent(),
-                        graphItems.get(lastInclusiveIndex + 1).getPercent()
-                );
-
-                if (endYPercentage < yMin) {
-                    yMin = endYPercentage;
-                } else if (endYPercentage > yMax) {
-                    yMax = endYPercentage;
-                }
-            }
-            for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-                float value = graphItems.get(i).getPercent();
-                if (value < yMin) {
-                    yMin = value;
-                } else if (value > yMax) {
-                    yMax = value;
-                }
-            }
-        }
-
-        return new float[]{yMin, yMax};
-    }
-
-    private int findFirstInclusiveIndex(float startXPercentage, boolean respectMargin) {
+    private int findFirstInclusiveIndex(float startXPercentage) {
         for (int i = 0; i < data.getDatePoints().size(); i++) {
-            float value = data.getDatePoints().get(i).getPercent();
-            if (respectMargin) {
-                value = applyXMargin(value);
-            }
+            float value = applyXMargin(data.getDatePoints().get(i).getPercent());
             if (value > startXPercentage || isFloatEquals(value, startXPercentage)) {
                 return i;
             }
@@ -453,12 +285,9 @@ public class ChartManager {
         return -1;
     }
 
-    private int findLastInclusiveIndex(float endXPercentage, boolean respectMargins) {
+    private int findLastInclusiveIndex(float endXPercentage) {
         for (int i = data.getDatePoints().size() - 1; i >= 0; i--) {
-            float value = data.getDatePoints().get(i).getPercent();
-            if (respectMargins) {
-                value = applyXMargin(value);
-            }
+            float value = applyXMargin(data.getDatePoints().get(i).getPercent());
             if (value < endXPercentage || isFloatEquals(value, endXPercentage)) {
                 return i;
             }
@@ -467,19 +296,12 @@ public class ChartManager {
     }
 
     private float applyXMargin(float x) {
+        float xMarginPercent = marginPercent(leftBorder, rightBorder);
         return x * (1 - xMarginPercent * 2) + xMarginPercent;
     }
 
-    private float calcYAtXByTwoPoints(float x, float x1, float y1, float x2, float y2) {
-        return y1 + (x - x1) * (y2 - y1) / (x2 - x1);
-    }
-
-    private boolean isFloatEquals(float f1, float f2) {
-        return Math.abs(f1 - f2) < 0.0001;
-    }
-
-    private void recalculateXMargin() {
-        xMarginPercent = Constants.PADDING_HORIZONTAL / (chartView.getWidth() / visiblePartSize());
+    private float marginPercent(float minX, float maxX) {
+        return Constants.PADDING_HORIZONTAL / (chartView.getWidth() / (maxX - minX));
     }
 
     public interface UpdateListener {
