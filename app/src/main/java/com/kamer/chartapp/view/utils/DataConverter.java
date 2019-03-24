@@ -1,5 +1,7 @@
 package com.kamer.chartapp.view.utils;
 
+import android.graphics.Path;
+
 import com.kamer.chartapp.data.InputData;
 import com.kamer.chartapp.data.InputGraph;
 import com.kamer.chartapp.view.data.Data;
@@ -39,15 +41,25 @@ public class DataConverter {
         }
         long verticalLength = Math.abs(minY - maxY);
 
+
         List<Graph> graphs = new ArrayList<>();
         for (InputGraph inputGraph : inputData.getGraphs()) {
             long[] data = inputGraph.getValues();
             List<GraphItem> items = new ArrayList<>();
-            for (long aData : data) {
-                float y = Math.abs(minY - aData) / (float) verticalLength;
-                items.add(new GraphItem(y, aData));
+            Path path = new Path();
+
+            for (int i = 0; i < datePoints.size(); i++) {
+                float x = datePoints.get(i).getPercent();
+                float y = Math.abs(minY - data[i]) / (float) verticalLength;
+                items.add(new GraphItem(y, data[i]));
+                if (path.isEmpty()) {
+                    path.moveTo(x, y);
+                } else {
+                    path.lineTo(x, y);
+                }
             }
-            graphs.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, true));
+
+            graphs.add(new Graph(inputGraph.getName(), inputGraph.getColor(), items, path, true));
         }
         return new Data(graphs, datePoints, minY, maxY);
     }

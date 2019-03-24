@@ -5,7 +5,9 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.graphics.Matrix;
 import android.graphics.Path;
+import android.graphics.RectF;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,7 +37,7 @@ import java.util.Map;
 public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
-    private static final int PADDING_VERTICAL = (int) UnitConverter.dpToPx(32);
+    private static final float PADDING_VERTICAL = UnitConverter.dpToPx(32);
     private static final int PADDING_TEXT_BOTTOM = (int) UnitConverter.dpToPx(8);
     private static final int PADDING_PREVIEW_VERTICAL = 15;
 
@@ -120,11 +122,8 @@ public class ChartManager {
                     xAlphas[datePointsIndex] = 1;
                 }
                 recalculateXMargin();
-                calculateDrawData();
-                calculatePreviewDrawData(data.getGraphs());
-                previewMaskView.invalidate();
-                previewView.invalidate();
-//                animateZoom();
+//                updateHorizontalPosition();
+                animateZoom();
 
                 recalculateDates();
                 animateDates();
@@ -138,7 +137,7 @@ public class ChartManager {
         for (int i = 0; i < data.getGraphs().size(); i++) {
             Graph graph = data.getGraphs().get(i);
             if (graph.getName().equals(name)) {
-                data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), isEnabled));
+                data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 drawSelection = null;
                 animateZoom();
                 sync();
@@ -159,8 +158,8 @@ public class ChartManager {
             this.leftBorder = newLeft;
             drawSelection = null;
             recalculateXMargin();
-//            animateZoom();
-            updateHorizontalPosition();
+            animateZoom();
+//            updateHorizontalPosition();
 
             recalculateDates();
             animateDates();
@@ -185,8 +184,8 @@ public class ChartManager {
             this.pan = newPan;
             drawSelection = null;
             recalculateXMargin();
-//            animateZoom();
-            updateHorizontalPosition();
+            animateZoom();
+//            updateHorizontalPosition();
 
             recalculateDates();
             animateDates();
@@ -206,8 +205,8 @@ public class ChartManager {
             this.leftBorder += diff;
             this.rightBorder += diff;
             drawSelection = null;
-//            animateZoom();
-            updateHorizontalPosition();
+            animateZoom();
+//            updateHorizontalPosition();
         }
     }
 
@@ -335,51 +334,14 @@ public class ChartManager {
 
         int width = chartView.getWidth();
         int height = chartView.getHeight();
-        int firstInclusiveIndex = findFirstInclusiveIndex(leftBorder, true);
-        int lastInclusiveIndex = findLastInclusiveIndex(rightBorder, true);
 
         for (Graph graph : data.getGraphs()) {
-            List<GraphItem> graphItems = graph.getItems();
+            Path path = scalePath(width, height, graph.getPath(), minY, maxY, leftBorder, rightBorder, PADDING_VERTICAL, xMarginPx);
 
-            float[] start = null, end = null;
-
-            if (firstInclusiveIndex > 0) {
-                float startYPercentage = calcYAtXByTwoPoints(
-                        leftBorder,
-                        applyXMargin(data.getDatePoints().get(firstInclusiveIndex - 1).getPercent()),
-                        graphItems.get(firstInclusiveIndex - 1).getPercent(),
-                        applyXMargin(data.getDatePoints().get(firstInclusiveIndex).getPercent()),
-                        graphItems.get(firstInclusiveIndex).getPercent()
-                );
-                start = new float[]{leftBorder, startYPercentage};
-            }
-
-            if (lastInclusiveIndex < graphItems.size() - 1) {
-                float endYPercentage = calcYAtXByTwoPoints(
-                        rightBorder,
-                        applyXMargin(data.getDatePoints().get(lastInclusiveIndex).getPercent()),
-                        graphItems.get(lastInclusiveIndex).getPercent(),
-                        applyXMargin(data.getDatePoints().get(lastInclusiveIndex + 1).getPercent()),
-                        graphItems.get(lastInclusiveIndex + 1).getPercent()
-                );
-                end = new float[]{rightBorder, endYPercentage};
-            }
-
-            List<float[]> items = new ArrayList<>();
-            if (start != null) items.add(start);
-            for (int i = firstInclusiveIndex; i <= lastInclusiveIndex; i++) {
-                items.add(new float[]{
-                        applyXMargin(data.getDatePoints().get(i).getPercent()),
-                        graphItems.get(i).getPercent()
-                });
-            }
-            if (end != null) items.add(end);
-
-            Path path = getPathForGraphItems(items, width, height, minY, maxY, leftBorder, rightBorder, PADDING_VERTICAL);
-            float alpha = getAlpha(graph.getName());
-
-            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
+            float alpha1 = getAlpha(graph.getName());
+            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha1 * 255)));
         }
+
 
         //TODO: move it somewhere
         List<DrawYGuides> drawYGuides = new ArrayList<>();
@@ -415,6 +377,54 @@ public class ChartManager {
         chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels, drawSelection));
     }
 
+    private void calculatePreviewDrawData(List<Graph> graphs) {
+        List<DrawGraph> result = new ArrayList<>();
+        int width = previewView.getWidth();
+        int height = previewView.getHeight();
+
+        for (Graph graph : graphs) {
+            Path path = scalePath(width, height, graph.getPath(), 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL, 0);
+
+            float alpha = getAlpha(graph.getName());
+            result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
+        }
+
+        previewView.setDrawData(new PreviewDrawData(result));
+        previewMaskView.setDrawData(new PreviewMaskDrawData(
+                previewMaskView.getWidth() * leftBorder,
+                previewMaskView.getWidth() * rightBorder
+        ));
+    }
+
+    private Path scalePath(int width, int height, Path path, float minY, float maxY, float minX, float maxX, float paddingVertical, float paddingHorizontal) {
+
+        float scaledWidth = width * 1f / (maxX - minX);
+        float scaledHeight = (height - paddingVertical * 2) * (1f / (maxY - minY));
+
+        Path result = new Path(path);
+
+        //scale
+        Matrix scale = new Matrix();
+        scale.setScale(scaledWidth, -scaledHeight);
+        result.transform(scale);
+
+        //move
+        float moveX = -minX * scaledWidth;
+        float moveY = scaledHeight - (1 - maxY) * scaledHeight + paddingVertical;
+        result.offset(moveX, moveY);
+
+        //x insets
+        Matrix inset = new Matrix();
+        RectF bounds = new RectF();
+        result.computeBounds(bounds, true);
+        RectF boundsWithInsets = new RectF(bounds);
+        boundsWithInsets.inset(paddingHorizontal, 0);
+        inset.setRectToRect(bounds, boundsWithInsets, Matrix.ScaleToFit.FILL);
+        result.transform(inset);
+
+        return result;
+    }
+
     private float[] calculateYGuides(float minY, float maxY) {
         int count = 6;
         float bottomValue = (data.getMaxValue() - data.getMinValue()) * minY + data.getMinValue();
@@ -438,61 +448,9 @@ public class ChartManager {
         return guides;
     }
 
-    private void calculatePreviewDrawData(List<Graph> graphs) {
-        List<DrawGraph> result = new ArrayList<>();
-        int width = previewView.getWidth();
-        int height = previewView.getHeight();
-
-        for (Graph graph : graphs) {
-            float percentDiff = (data.getMaxValue() - (data.getMaxValue() - data.getMinValue())) / (float) data.getMaxValue();
-            List<float[]> graphItems = new ArrayList<>();
-            for (int i = 0; i < graph.getItems().size(); i++) {
-                graphItems.add(new float[]{
-                        data.getDatePoints().get(i).getPercent(),
-                        graph.getItems().get(i).getPercent()
-                });
-            }
-
-            Path path = getPathForGraphItems(graphItems, width, height, -percentDiff, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL);
-
-            float alpha = getAlpha(graph.getName());
-            result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
-        }
-
-        previewView.setDrawData(new PreviewDrawData(result));
-        previewMaskView.setDrawData(new PreviewMaskDrawData(
-                previewMaskView.getWidth() * leftBorder,
-                previewMaskView.getWidth() * rightBorder
-        ));
-    }
-
-    private Path getPathForGraphItems(
-            List<float[]> items,
-            int width, int height,
-            float minY, float maxY,
-            float minX, float maxX,
-            int verticalPadding
-    ) {
-        Path path = new Path();
-        for (int i = 1; i < items.size(); i++) {
-            float[] start = items.get(i - 1);
-            float[] end = items.get(i);
-            int startX = (int) (width * calcPercent(start[0], minX, maxX));
-            int startY = calculateYFromPercent(height, start[1], minY, maxY, verticalPadding);
-            int stopX = (int) (width * calcPercent(end[0], minX, maxX));
-            int stopY = calculateYFromPercent(height, end[1], minY, maxY, verticalPadding);
-
-            if (path.isEmpty()) {
-                path.moveTo(startX, startY);
-            }
-            path.lineTo(stopX, stopY);
-        }
-        return path;
-    }
-
-    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, int padding) {
-        int heightWithPadding = height - padding * 2;
-        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + padding;
+    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, float padding) {
+        int heightWithPadding = height - (int) padding * 2;
+        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + (int) padding;
     }
 
     private float visiblePartSize() {
@@ -537,8 +495,8 @@ public class ChartManager {
                     if (valueAnimator.getAnimatedValue(i1 + "") != null) {
                         xAlphas[i1] = (float) valueAnimator.getAnimatedValue(i1 + "");
                     }
+                    calculateDrawData();
                 }
-                calculateDrawData();
             }
         });
         animator.addListener(new AnimatorListenerAdapter() {
