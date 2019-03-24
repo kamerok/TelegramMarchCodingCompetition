@@ -148,10 +148,15 @@ public class GraphDrawer {
     private void drawSelectionLine(Canvas canvas, GraphDrawData drawData) {
         if (drawData.getDrawSelection() != null) {
             guideLinePaint.setAlpha(255);
+            float stopY;
+            if (drawData.getDrawYGuides().isEmpty()) {
+                stopY = canvas.getHeight();
+            } else {
+                stopY = drawData.getDrawYGuides().get(0).getyGuides()[3];
+            }
             canvas.drawLine(
                     drawData.getDrawSelection().getSelection(), 0,
-                    //TODO: is this safe?
-                    drawData.getDrawSelection().getSelection(), drawData.getDrawYGuides().get(0).getyGuides()[3],
+                    drawData.getDrawSelection().getSelection(), stopY,
                     guideLinePaint
             );
         }

@@ -47,7 +47,6 @@ public class ChartManager {
     private float minY;
     private float maxY = 1;
     private float totalMaxY = 1;
-    private DrawSelection drawSelection;
 
     private ValueAnimator currentAnimation;
 
@@ -107,7 +106,6 @@ public class ChartManager {
                 maxY = targetRange[1];
                 guideAlphas.clear();
                 guideAlphas.put(new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true), 1f);
-                drawSelection = null;
 
                 recalculateXMargin();
 
@@ -128,7 +126,7 @@ public class ChartManager {
             Graph graph = data.getGraphs().get(i);
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
-                drawSelection = null;
+                chartView.clearSelection();
                 graphAlphaAnimator.animate();
                 syncGraphEnabledStatus();
                 return;
@@ -146,7 +144,7 @@ public class ChartManager {
         }
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
-            drawSelection = null;
+            chartView.clearSelection();
             onUpdateMinX();
             onUpdateZoom();
         }
@@ -168,7 +166,7 @@ public class ChartManager {
         if (this.rightBorder != newRight || pan != newPan) {
             this.rightBorder = newRight;
             this.pan = newPan;
-            drawSelection = null;
+            chartView.clearSelection();;
             onUpdateMaxX();
             onUpdateZoom();
         }
@@ -186,7 +184,7 @@ public class ChartManager {
             this.pan = newPan;
             this.leftBorder += diff;
             this.rightBorder += diff;
-            drawSelection = null;
+            chartView.clearSelection();
             onUpdateMinX();
             onUpdateMaxX();
         }
@@ -248,9 +246,7 @@ public class ChartManager {
                 datePoint.getTextExtended(),
                 texts
         );
-        drawSelection = new DrawSelection(realX, points, popup);
-
-        updateAllChartValues();
+        chartView.setSelection(new DrawSelection(realX, points, popup));
     }
 
     private void onUpdateMinX() {
@@ -273,7 +269,7 @@ public class ChartManager {
     }
 
     private void updateAllChartValues() {
-        chartView.set(minY, maxY, guideAlphas, drawSelection);
+        chartView.set(minY, maxY, guideAlphas);
     }
 
     private void updateAllPreviewValues() {
