@@ -12,7 +12,6 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
 
     private DrawThread drawThread;
     private GraphDrawer drawer;
-    private GraphDrawData drawData;
 
     public ChartView(Context context) {
         super(context);
@@ -44,20 +43,17 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         boolean retry = true;
-        // завершаем работу потока
         drawThread.setRunning(false);
         while (retry) {
             try {
                 drawThread.join();
                 retry = false;
-            } catch (InterruptedException e) {
-                // если не получилось, то будем пытаться еще и еще
+            } catch (InterruptedException ignored) {
             }
         }
     }
 
     public void setDrawData(GraphDrawData drawData) {
-        this.drawData = drawData;
         if (drawThread != null) {
             drawThread.setDrawData(drawData);
         }
