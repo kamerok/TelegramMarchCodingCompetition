@@ -102,12 +102,14 @@ public class PreviewMaskView extends View {
         return true;
     }
 
-    public void setDrawData(PreviewMaskDrawData drawData) {
-        this.drawData = drawData;
+    public void setBorders(float start, float end) {
+        drawData = new PreviewMaskDrawData(getWidth() * start, getWidth() * end);
+        invalidate();
     }
 
     public void setColors(int overlayColor, int frameColor) {
         initPaints(overlayColor, frameColor);
+        invalidate();
     }
 
     public void setListener(Listener listener) {

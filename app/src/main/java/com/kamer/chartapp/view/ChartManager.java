@@ -5,7 +5,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.graphics.Path;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,14 +14,10 @@ import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.Graph;
 import com.kamer.chartapp.view.data.GraphItem;
 import com.kamer.chartapp.view.data.YGuides;
-import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
-import com.kamer.chartapp.view.data.draw.PreviewDrawData;
-import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
 import com.kamer.chartapp.view.surface.ChartView;
-import com.kamer.chartapp.view.utils.DrawUtils;
 import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.ArrayList;
@@ -34,7 +29,6 @@ public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
     private static final float PADDING_VERTICAL = UnitConverter.dpToPx(32);
-    private static final int PADDING_PREVIEW_VERTICAL = 15;
 
     private ChartView chartView;
     private PreviewView previewView;
@@ -319,23 +313,9 @@ public class ChartManager {
         chartView.set(minY, maxY, leftBorder, rightBorder ,alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
     }
 
-    private void calculatePreviewDrawData(List<Graph> graphs) {
-        List<DrawGraph> result = new ArrayList<>();
-        int width = previewView.getWidth();
-        int height = previewView.getHeight();
-
-        for (Graph graph : graphs) {
-            Path path = DrawUtils.scalePath(width, height, graph.getPath(), 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL, 0);
-
-            float alpha = getAlpha(graph.getName());
-            result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
-        }
-
-        previewView.setDrawData(new PreviewDrawData(result));
-        previewMaskView.setDrawData(new PreviewMaskDrawData(
-                previewMaskView.getWidth() * leftBorder,
-                previewMaskView.getWidth() * rightBorder
-        ));
+    private void updateAllPreviewValues() {
+        previewView.set(data.getGraphs(), totalMaxY, alphas);
+        previewMaskView.setBorders(leftBorder, rightBorder);
     }
 
     private float[] calculateYGuides(float minY, float maxY) {
@@ -488,10 +468,7 @@ public class ChartManager {
 
                 alphas = newAlphas;
                 updateAllChartValues();
-
-                calculatePreviewDrawData(data.getGraphs());
-                previewView.invalidate();
-                previewMaskView.invalidate();
+                updateAllPreviewValues();
             }
         });
         currentAnimation = animator;

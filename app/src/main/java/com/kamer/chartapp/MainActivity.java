@@ -197,7 +197,6 @@ public class MainActivity extends Activity implements ChartManager.UpdateListene
                         newTextColor
                 );
                 previewMaskView.setColors(newOverlayColor, newFrameColor);
-                previewMaskView.invalidate();
                 chartView.setColors(newPopupColor, newTextColor, newPopupShadowColor, newGuideColor, newGuideTextColor, newBackgroundColor);
 
                 primaryColor = newPrimaryColor;
