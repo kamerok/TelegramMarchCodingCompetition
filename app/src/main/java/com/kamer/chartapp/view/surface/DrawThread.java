@@ -98,13 +98,13 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
-    public void set(
-            float minY,
-            float maxY,
-            Map<YGuides, Float> guideAlphas
-    ) {
+    public void setYRange(float minY, float maxY) {
         this.minY = minY;
         this.maxY = maxY;
+        isDirty = true;
+    }
+
+    public void setGuideAlphas(Map<YGuides, Float> guideAlphas) {
         this.guideAlphas = guideAlphas;
         isDirty = true;
     }

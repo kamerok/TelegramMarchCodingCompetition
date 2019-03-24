@@ -126,13 +126,18 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void set(
-            float minY,
-            float maxY,
-            Map<YGuides, Float> guideAlphas
-    ) {
+    public void setGuideAlphas(Map<YGuides, Float> guideAlphas) {
+        this.guideAlphas = guideAlphas;
         if (drawThread != null) {
-            drawThread.set(minY, maxY, guideAlphas);
+            drawThread.setGuideAlphas(guideAlphas);
+        }
+    }
+
+    public void setYRange(float minY, float maxY) {
+        this.minY = minY;
+        this.maxY = maxY;
+        if (drawThread != null) {
+            drawThread.setYRange(minY, maxY);
         }
     }
 

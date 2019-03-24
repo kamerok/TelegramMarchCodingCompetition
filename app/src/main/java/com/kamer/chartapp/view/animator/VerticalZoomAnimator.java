@@ -1,8 +1,9 @@
 package com.kamer.chartapp.view.animator;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
-import android.view.animation.LinearInterpolator;
 
 import com.kamer.chartapp.view.Constants;
 import com.kamer.chartapp.view.PreviewView;
@@ -31,7 +32,8 @@ public class VerticalZoomAnimator {
     private float maxY = 1;
     private float totalMaxY = 1;
 
-    private ValueAnimator currentAnimation;
+    private ValueAnimator currentZoomAnimation;
+    private ValueAnimator currentAlphaAnimation;
 
     public VerticalZoomAnimator(ChartView chartView, PreviewView previewView) {
         this.chartView = chartView;
@@ -49,8 +51,11 @@ public class VerticalZoomAnimator {
 
         totalMaxY = calculateTargetRange(0, 1, false)[1];
 
-        if (currentAnimation != null) {
-            currentAnimation.cancel();
+        if (currentZoomAnimation != null) {
+            currentZoomAnimation.cancel();
+        }
+        if (currentAlphaAnimation != null) {
+            currentAlphaAnimation.cancel();
         }
     }
 
@@ -75,8 +80,45 @@ public class VerticalZoomAnimator {
         float[] totalRange = calculateTargetRange(0f, 1f, false);
 
         float[] percents = calculateYGuides(targetRange[0], targetRange[1]);
+        animateZoom(percents[0], targetRange[1], totalRange[1]);
+        animateAlpha(percents, minX, maxX);
+    }
+
+    private void animateZoom(float targetMinY, float targetMaxY, float targetTotalMax) {
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[3];
+        properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetMinY);
+        properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetMaxY);
+        properties[2] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, targetTotalMax);
+        if (currentZoomAnimation != null) {
+            currentZoomAnimation.cancel();
+        }
+        ValueAnimator animator = new ValueAnimator();
+        animator.setValues(properties);
+        animator.setDuration(100);
+
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                float newMin = (float) valueAnimator.getAnimatedValue("minY");
+                float newMax = (float) valueAnimator.getAnimatedValue("maxY");
+                float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
+
+                minY = newMin;
+                maxY = newMax;
+                chartView.setYRange(minY, maxY);
+
+                if (newTotalMax != totalMaxY) {
+                    totalMaxY = newTotalMax;
+                    previewView.setMax(newTotalMax);
+                }
+            }
+        });
+        currentZoomAnimation = animator;
+        animator.start();
+    }
+
+    private void animateAlpha(float[] percents, final float minX, final float maxX) {
         YGuides targetGuides = new YGuides(percents, true);
-        targetRange = new float[]{percents[0], targetRange[1]};
         if (!guideAlphas.containsKey(targetGuides)) {
             guideAlphas.put(targetGuides, 0f);
         }
@@ -90,29 +132,22 @@ public class VerticalZoomAnimator {
             }
         }
 
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[3 + guideAlphas.size()];
-        properties[0] = PropertyValuesHolder.ofFloat("minY", minY, targetRange[0]);
-        properties[1] = PropertyValuesHolder.ofFloat("maxY", maxY, targetRange[1]);
-        properties[2] = PropertyValuesHolder.ofFloat("totalMaxY", totalMaxY, totalRange[1]);
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[guideAlphas.size()];
         int i = 0;
         for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
-            properties[i + 3] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
+            properties[i] = PropertyValuesHolder.ofFloat(yGuidesFloatEntry.getKey().hashCode() + "", yGuidesFloatEntry.getValue(), yGuidesFloatEntry.getKey().isActive() ? 1f : 0f);
             i++;
         }
-        if (currentAnimation != null) {
-            currentAnimation.cancel();
+        if (currentAlphaAnimation != null) {
+            currentAlphaAnimation.cancel();
         }
         ValueAnimator animator = new ValueAnimator();
         animator.setValues(properties);
-        animator.setInterpolator(new LinearInterpolator());
         animator.setDuration(100);
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                float newMin = (float) valueAnimator.getAnimatedValue("minY");
-                float newMax = (float) valueAnimator.getAnimatedValue("maxY");
-                float newTotalMax = (float) valueAnimator.getAnimatedValue("totalMaxY");
                 List<YGuides> keys = new ArrayList<>(guideAlphas.keySet());
                 for (YGuides guides : keys) {
                     float value = (float) valueAnimator.getAnimatedValue(guides.hashCode() + "");
@@ -121,17 +156,10 @@ public class VerticalZoomAnimator {
                         guideAlphas.put(guides, value);
                     }
                 }
-                minY = newMin;
-                maxY = newMax;
-                chartView.set(minY, maxY, new HashMap<>(guideAlphas));
-
-                if (newTotalMax != totalMaxY) {
-                    totalMaxY = newTotalMax;
-                    previewView.setMax(newTotalMax);
-                }
+                chartView.setGuideAlphas(new HashMap<>(guideAlphas));
             }
         });
-        currentAnimation = animator;
+        currentAlphaAnimation = animator;
         animator.start();
     }
 
