@@ -1,7 +1,5 @@
 package com.kamer.chartapp.view.animator;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 
@@ -81,7 +79,7 @@ public class VerticalZoomAnimator {
 
         float[] percents = calculateYGuides(targetRange[0], targetRange[1]);
         animateZoom(percents[0], targetRange[1], totalRange[1]);
-        animateAlpha(percents, minX, maxX);
+        animateAlpha(percents);
     }
 
     private void animateZoom(float targetMinY, float targetMaxY, float targetTotalMax) {
@@ -117,7 +115,7 @@ public class VerticalZoomAnimator {
         animator.start();
     }
 
-    private void animateAlpha(float[] percents, final float minX, final float maxX) {
+    private void animateAlpha(float[] percents) {
         YGuides targetGuides = new YGuides(percents, true);
         if (!guideAlphas.containsKey(targetGuides)) {
             guideAlphas.put(targetGuides, 0f);
