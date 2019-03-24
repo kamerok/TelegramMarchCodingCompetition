@@ -24,7 +24,6 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     private float minX;
     private float maxX;
     private float[] xAlphas;
-    private float xMarginPercent;
 
     public ChartView(Context context) {
         super(context);
@@ -49,7 +48,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         drawThread = new DrawThread(drawer, getHolder());
-        drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, xMarginPercent);
+        drawThread.setData(data, minY, maxY, minX, maxX, xAlphas);
         drawThread.setRunning(true);
         drawThread.start();
     }
@@ -74,16 +73,15 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, float xMarginPercent) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas) {
         this.data = data;
         this.minY = minY;
         this.maxY = maxY;
         this.minX = minX;
         this.maxX = maxX;
         this.xAlphas = xAlphas;
-        this.xMarginPercent = xMarginPercent;
         if (drawThread != null) {
-            drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, xMarginPercent);
+            drawThread.setData(data, minY, maxY, minX, maxX, xAlphas);
         }
     }
 
@@ -107,16 +105,22 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void set(
+    public void setXAlphas(float[] xAlphas) {
+        this.xAlphas = xAlphas;
+        if (drawThread != null) {
+            drawThread.setXAlphas(xAlphas);
+        }
+    }
+
+
+        public void set(
             float minY,
             float maxY,
             Map<YGuides, Float> guideAlphas,
-            float[] xAlphas,
-            float xMarginPercent,
             DrawSelection drawSelection
     ) {
         if (drawThread != null) {
-            drawThread.set(minY, maxY, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+            drawThread.set(minY, maxY, guideAlphas, drawSelection);
         }
     }
 

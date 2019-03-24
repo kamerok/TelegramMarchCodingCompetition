@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Path;
 import android.view.SurfaceHolder;
 
+import com.kamer.chartapp.view.Constants;
 import com.kamer.chartapp.view.GraphDrawer;
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
@@ -22,10 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings("WeakerAccess")
 public class DrawThread extends Thread {
 
     private static final float PADDING_VERTICAL = UnitConverter.dpToPx(32);
-    private static final float PADDING_HORIZONTAL = UnitConverter.dpToPx(16);
     private static final float PADDING_TEXT_BOTTOM = UnitConverter.dpToPx(8);
 
     final private SurfaceHolder surfaceHolder;
@@ -44,7 +45,6 @@ public class DrawThread extends Thread {
     private Map<String, Float> graphAlphas = new HashMap<>();
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float[] xAlphas = new float[0];
-    private float xMarginPercent;
     private DrawSelection drawSelection;
 
     public DrawThread(GraphDrawer drawer, SurfaceHolder surfaceHolder) {
@@ -60,7 +60,7 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
-    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, float xMarginPercent) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas) {
         this.data = data;
         this.minY = minY;
         this.maxY = maxY;
@@ -69,7 +69,6 @@ public class DrawThread extends Thread {
         this.graphAlphas = new HashMap<>();
         this.guideAlphas = new HashMap<>();
         this.xAlphas = xAlphas;
-        this.xMarginPercent = xMarginPercent;
         this.drawSelection = null;
         isDirty = true;
     }
@@ -89,19 +88,20 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
+    public void setXAlphas(float[] xAlphas) {
+        this.xAlphas = xAlphas;
+        isDirty = true;
+    }
+
     public void set(
             float minY,
             float maxY,
             Map<YGuides, Float> guideAlphas,
-            float[] xAlphas,
-            float xMarginPercent,
             DrawSelection drawSelection
     ) {
         this.minY = minY;
         this.maxY = maxY;
         this.guideAlphas = guideAlphas;
-        this.xAlphas = xAlphas;
-        this.xMarginPercent = xMarginPercent;
         this.drawSelection = drawSelection;
         isDirty = true;
     }
@@ -134,7 +134,7 @@ public class DrawThread extends Thread {
         ArrayList<DrawGraph> result = new ArrayList<>();
 
         for (Graph graph : data.getGraphs()) {
-            Path path = DrawUtils.scalePath(width, height, graph.getPath(), minY, maxY, minX, maxX, PADDING_VERTICAL, PADDING_HORIZONTAL);
+            Path path = DrawUtils.scalePath(width, height, graph.getPath(), minY, maxY, minX, maxX, PADDING_VERTICAL, Constants.PADDING_HORIZONTAL);
 
             float alpha = getAlpha(graph.getName());
             result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
@@ -149,7 +149,7 @@ public class DrawThread extends Thread {
             List<DrawText> drawTexts = new ArrayList<>();
             int alpha = (int) (yGuidesFloatEntry.getValue() * 255);
             for (int i = 0; i < guide.getPercent().length; i++) {
-                float y = calculateYFromPercent(height, guide.getPercent()[i], minY, maxY, PADDING_VERTICAL);
+                float y = calculateYFromPercent(height, guide.getPercent()[i], minY, maxY);
                 yLines[i * 4] = UnitConverter.dpToPx(16);
                 yLines[i * 4 + 1] = y;
                 yLines[i * 4 + 2] = width - UnitConverter.dpToPx(16);
@@ -167,7 +167,7 @@ public class DrawThread extends Thread {
             if (xAlphas[i] > 0) {
                 DatePoint datePoint = data.getDatePoints().get(i);
                 float xPercent = datePoint.getPercent();
-                int x = (int) (width * calcPercent(applyXMargin(xPercent), minX, maxX));
+                int x = (int) (width * calcPercent(applyXMargin(xPercent, width), minX, maxX));
                 xLabels.add(new DrawText(datePoint.getText(), x, height - PADDING_TEXT_BOTTOM, (int) (xAlphas[i] * 255)));
             }
         }
@@ -180,16 +180,21 @@ public class DrawThread extends Thread {
         return animatedAlpha != null ? animatedAlpha : 1f;
     }
 
-    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent, float padding) {
-        int heightWithPadding = height - (int) padding * 2;
-        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + (int) padding;
+    private int calculateYFromPercent(int height, float y, float minYPercent, float maxYPercent) {
+        int heightWithPadding = height - (int) DrawThread.PADDING_VERTICAL * 2;
+        return ((int) (heightWithPadding - heightWithPadding * calcPercent(y, minYPercent, maxYPercent))) + (int) DrawThread.PADDING_VERTICAL;
     }
 
     private float calcPercent(float value, float start, float end) {
         return (value - start) / (end - start);
     }
 
-    private float applyXMargin(float x) {
-        return x * (1 - xMarginPercent * 2) + xMarginPercent;
+    private float applyXMargin(float x, float width) {
+        float marginPercent = marginPercent(width);
+        return x * (1 - marginPercent * 2) + marginPercent;
+    }
+
+    private float marginPercent(float width) {
+        return Constants.PADDING_HORIZONTAL / (width / (maxX - minX));
     }
 }

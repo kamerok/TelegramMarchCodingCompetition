@@ -19,7 +19,7 @@ public class GraphAlphaAnimator {
     private List<Graph> graphs;
 
     private Map<String, Float> graphAlphas = new HashMap<>();
-    private ValueAnimator graphAlphaAnimation;
+    private ValueAnimator currentAnimation;
 
     public GraphAlphaAnimator(PreviewView previewView, ChartView chartView) {
         this.previewView = previewView;
@@ -29,20 +29,20 @@ public class GraphAlphaAnimator {
     public void setData(List<Graph> data) {
         this.graphs = data;
         graphAlphas = new HashMap<>();
-        if (graphAlphaAnimation != null) {
-            graphAlphaAnimation.cancel();
+        if (currentAnimation != null) {
+            currentAnimation.cancel();
         }
     }
 
-    public void animateGraphAlphas() {
+    public void animate() {
         PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size()];
         for (int i = 0; i < graphs.size(); i++) {
             Graph graph = graphs.get(i);
             String name = graph.getName();
             properties[i] = PropertyValuesHolder.ofFloat(name, getGraphAlpha(name), graph.isEnabled() ? 1f : 0f);
         }
-        if (graphAlphaAnimation != null) {
-            graphAlphaAnimation.cancel();
+        if (currentAnimation != null) {
+            currentAnimation.cancel();
         }
         ValueAnimator animator = new ValueAnimator();
         animator.setValues(properties);
@@ -62,7 +62,7 @@ public class GraphAlphaAnimator {
                 chartView.setGraphAlphas(newAlphas);
             }
         });
-        graphAlphaAnimation = animator;
+        currentAnimation = animator;
         animator.start();
     }
 

@@ -1,14 +1,12 @@
 package com.kamer.chartapp.view;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.kamer.chartapp.view.animator.DateAlphaAnimator;
 import com.kamer.chartapp.view.animator.GraphAlphaAnimator;
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
@@ -43,21 +41,17 @@ public class ChartManager {
     private float pan = 0f;
 
     private GraphAlphaAnimator graphAlphaAnimator;
+    private DateAlphaAnimator dateAlphaAnimator;
 
-    private float[] xAlphas = new float[0];
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float minY;
     private float maxY = 1;
     private float totalMaxY = 1;
     private DrawSelection drawSelection;
 
-    private List<Integer> datePointsIndexes = new ArrayList<>();
-
     private ValueAnimator currentAnimation;
-    private ValueAnimator datesAnimation;
 
     private float xMarginPercent;
-    private float xMarginPx = UnitConverter.dpToPx(16);
 
     @SuppressLint("ClickableViewAccessibility")
     public ChartManager(ChartView chartView, PreviewView previewView, PreviewMaskView previewMaskView, UpdateListener updateListener) {
@@ -67,6 +61,7 @@ public class ChartManager {
         this.updateListener = updateListener;
 
         this.graphAlphaAnimator = new GraphAlphaAnimator(previewView, chartView);
+        this.dateAlphaAnimator = new DateAlphaAnimator(chartView);
 
         previewMaskView.setListener(new PreviewMaskView.Listener() {
             @Override
@@ -105,8 +100,7 @@ public class ChartManager {
                 pan = 0f;
 
                 graphAlphaAnimator.setData(data.getGraphs());
-
-                xAlphas = new float[data.getDatePoints().size()];
+                dateAlphaAnimator.setData(data.getDatePoints(), leftBorder, rightBorder);
 
                 float[] targetRange = calculateTargetRange(leftBorder, rightBorder, true);
                 minY = targetRange[0];
@@ -114,22 +108,14 @@ public class ChartManager {
                 guideAlphas.clear();
                 guideAlphas.put(new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true), 1f);
                 drawSelection = null;
-                datePointsIndexes.clear();
-                for (Integer datePointsIndex : datePointsIndexes) {
-                    xAlphas[datePointsIndex] = 1;
-                }
+
                 recalculateXMargin();
 
                 totalMaxY = calculateTargetRange(0, 1, false)[1];
 
-//                animateZoom();
+                //TODO: initial zoom
 
-//                recalculateDates();
-//                animateDates();
-
-
-                //TODO: initial date and y values?
-                chartView.setData(data, minY, maxY, leftBorder, rightBorder, xAlphas, xMarginPercent);
+                chartView.setData(data, minY, maxY, leftBorder, rightBorder, dateAlphaAnimator.getXAlphas());
                 previewMaskView.setBorders(leftBorder, rightBorder);
                 previewView.setData(data.getGraphs(), totalMaxY);
                 syncGraphEnabledStatus();
@@ -143,7 +129,7 @@ public class ChartManager {
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 drawSelection = null;
-                graphAlphaAnimator.animateGraphAlphas();
+                graphAlphaAnimator.animate();
                 syncGraphEnabledStatus();
                 return;
             }
@@ -278,53 +264,8 @@ public class ChartManager {
     }
 
     private void onUpdateZoom() {
+        dateAlphaAnimator.animate(leftBorder, rightBorder);
         recalculateXMargin();
-    }
-
-    private boolean isIndexFit(int index) {
-        if (index >= data.getDatePoints().size()) return false;
-        float dateSize = 0.13f * visiblePartSize();
-        float percent = applyXMargin(data.getDatePoints().get(index).getPercent());
-        return percent - dateSize / 2 > 0 && percent + dateSize / 2 < 1;
-    }
-
-    private boolean isIndexesCollide(int index1, int index2) {
-        float dateSize = 0.13f * visiblePartSize();
-        float percent1 = applyXMargin(data.getDatePoints().get(index1).getPercent());
-        float percent2 = applyXMargin(data.getDatePoints().get(index2).getPercent());
-        return Math.abs(percent1 - percent2) < dateSize;
-    }
-
-    private void recalculateDates() {
-        int lastIndex = data.getDatePoints().size() - 1;
-        int startIndex;
-        if (!datePointsIndexes.isEmpty()) {
-            startIndex = lastIndex - datePointsIndexes.get(0);
-        } else {
-            startIndex = 0;
-            while (!isIndexFit(startIndex)) {
-                startIndex++;
-            }
-        }
-        List<Integer> indexes = new ArrayList<>();
-        indexes.add(lastIndex - startIndex);
-        int nextIndex;
-        int i = 0;
-        do {
-            nextIndex = startIndex + (int) Math.pow(2, i);
-            i++;
-        }
-        while ((!isIndexFit(nextIndex) || isIndexesCollide(startIndex, nextIndex)) && nextIndex < data.getDatePoints().size());
-        if (isIndexFit(nextIndex)) {
-            indexes.add(lastIndex - nextIndex);
-            int diff = nextIndex - startIndex;
-            int index = nextIndex + diff;
-            while (isIndexFit(index)) {
-                indexes.add(lastIndex - index);
-                index = index + diff;
-            }
-        }
-        datePointsIndexes = indexes;
     }
 
     private void syncGraphEnabledStatus() {
@@ -332,7 +273,7 @@ public class ChartManager {
     }
 
     private void updateAllChartValues() {
-        chartView.set(minY, maxY, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+        chartView.set(minY, maxY, guideAlphas, drawSelection);
     }
 
     private void updateAllPreviewValues() {
@@ -449,54 +390,6 @@ public class ChartManager {
         animator.start();
     }*/
 
-    private void animateDates() {
-        if (datesAnimation != null && datesAnimation.isRunning()) return;
-        float[] targetX = new float[xAlphas.length];
-        for (int i = 0; i < xAlphas.length; i++) {
-            targetX[i] = datePointsIndexes.contains(i) ? 1f : 0f;
-        }
-        List<Pair<Integer, Float>> toAnimate = new ArrayList<>();
-        for (int i = 0; i < targetX.length; i++) {
-            if (xAlphas[i] != targetX[i]) {
-                toAnimate.add(new Pair<>(i, targetX[i]));
-            }
-        }
-        if (toAnimate.isEmpty()) return;
-
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[toAnimate.size()];
-        int i = 0;
-        for (Pair<Integer, Float> integerFloatPair : toAnimate) {
-            properties[i] = PropertyValuesHolder.ofFloat(integerFloatPair.first + "", xAlphas[integerFloatPair.first], integerFloatPair.second);
-            i++;
-        }
-        if (datesAnimation != null) {
-            datesAnimation.cancel();
-        }
-        ValueAnimator animator = new ValueAnimator();
-        animator.setValues(properties);
-        animator.setDuration(100);
-
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                for (int i1 = 0; i1 < xAlphas.length; i1++) {
-                    if (valueAnimator.getAnimatedValue(i1 + "") != null) {
-                        xAlphas[i1] = (float) valueAnimator.getAnimatedValue(i1 + "");
-                    }
-                    updateAllChartValues();
-                }
-            }
-        });
-        animator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                animateDates();
-            }
-        });
-        datesAnimation = animator;
-        animator.start();
-    }
-
     private float[] calculateTargetRange(float startXPercentage, float endXPercentage, boolean withMargin) {
         float yMin = 1;
         float yMax = 0;
@@ -590,7 +483,7 @@ public class ChartManager {
     }
 
     private void recalculateXMargin() {
-        xMarginPercent = xMarginPx / (chartView.getWidth() / visiblePartSize());
+        xMarginPercent = Constants.PADDING_HORIZONTAL / (chartView.getWidth() / visiblePartSize());
     }
 
     public interface UpdateListener {
