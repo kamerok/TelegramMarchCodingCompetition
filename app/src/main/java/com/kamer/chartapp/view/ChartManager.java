@@ -9,6 +9,7 @@ import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.kamer.chartapp.view.animator.GraphAlphaAnimator;
 import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.DatePoint;
 import com.kamer.chartapp.view.data.Graph;
@@ -41,8 +42,7 @@ public class ChartManager {
     private float rightBorder = 1f;
     private float pan = 0f;
 
-    private Map<String, Float> graphAlphas = new HashMap<>();
-    private ValueAnimator graphAlphaAnimation;
+    private GraphAlphaAnimator graphAlphaAnimator;
 
     private float[] xAlphas = new float[0];
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
@@ -65,6 +65,8 @@ public class ChartManager {
         this.previewView = previewView;
         this.previewMaskView = previewMaskView;
         this.updateListener = updateListener;
+
+        this.graphAlphaAnimator = new GraphAlphaAnimator(previewView, chartView);
 
         previewMaskView.setListener(new PreviewMaskView.Listener() {
             @Override
@@ -102,8 +104,9 @@ public class ChartManager {
                 rightBorder = 1f;
                 pan = 0f;
 
+                graphAlphaAnimator.setData(data.getGraphs());
+
                 xAlphas = new float[data.getDatePoints().size()];
-                graphAlphas.clear();
 
                 float[] targetRange = calculateTargetRange(leftBorder, rightBorder, true);
                 minY = targetRange[0];
@@ -140,7 +143,7 @@ public class ChartManager {
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 drawSelection = null;
-                animateGraphAlphas();
+                graphAlphaAnimator.animateGraphAlphas();
                 syncGraphEnabledStatus();
                 return;
             }
@@ -485,39 +488,6 @@ public class ChartManager {
         animator.start();
     }
 
-    private void animateGraphAlphas() {
-        List<Graph> graphs = data.getGraphs();
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size()];
-        for (int i = 0; i < graphs.size(); i++) {
-            Graph graph = graphs.get(i);
-            String name = graph.getName();
-            properties[i] = PropertyValuesHolder.ofFloat(name, getGraphAlpha(name), graph.isEnabled() ? 1f : 0f);
-        }
-        if (graphAlphaAnimation != null) {
-            graphAlphaAnimation.cancel();
-        }
-        ValueAnimator animator = new ValueAnimator();
-        animator.setValues(properties);
-        animator.setDuration(100);
-
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                HashMap<String, Float> newAlphas = new HashMap<>();
-                for (Graph graph : data.getGraphs()) {
-                    Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
-                    float alpha = animatedValue != null ? (float) animatedValue : 1f;
-                    newAlphas.put(graph.getName(), alpha);
-                }
-                graphAlphas = newAlphas;
-                previewView.setAlphas(newAlphas);
-                chartView.setGraphAlphas(newAlphas);
-            }
-        });
-        graphAlphaAnimation = animator;
-        animator.start();
-    }
-
     private float[] calculateTargetRange(float startXPercentage, float endXPercentage, boolean withMargin) {
         float yMin = 1;
         float yMax = 0;
@@ -570,11 +540,6 @@ public class ChartManager {
         }
 
         return new float[]{yMin, yMax};
-    }
-
-    private float getGraphAlpha(String name) {
-        Float animatedAlpha = graphAlphas.get(name);
-        return animatedAlpha != null ? animatedAlpha : 1f;
     }
 
     private int findFirstInclusiveIndex(float startXPercentage, boolean respectMargin) {
