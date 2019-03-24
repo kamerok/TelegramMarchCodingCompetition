@@ -16,6 +16,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
 
     private DrawThread drawThread;
     private GraphDrawer drawer;
+    private Data data;
 
     public ChartView(Context context) {
         super(context);
@@ -40,6 +41,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         drawThread = new DrawThread(drawer, getHolder());
+        drawThread.setData(data);
         drawThread.setRunning(true);
         drawThread.start();
     }
@@ -57,12 +59,6 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    /*public void setDrawData(GraphDrawData drawData) {
-        if (drawThread != null) {
-            drawThread.setDrawData(drawData);
-        }
-    }*/
-
     public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor, int backgroundColor) {
         drawer.setColors(popupColor, popupTextColor, shadowColor, guideColor, guideTextColor, backgroundColor);
         if (drawThread != null) {
@@ -70,8 +66,14 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    public void setData(Data data) {
+        this.data = data;
+        if (drawThread != null) {
+            drawThread.setData(data);
+        }
+    }
+
     public void set(
-            Data data,
             float minY,
             float maxY,
             float minX,
@@ -83,7 +85,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
             DrawSelection drawSelection
     ) {
         if (drawThread != null) {
-            drawThread.set(data, minY, maxY, minX, maxX, alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+            drawThread.set(minY, maxY, minX, maxX, alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
         }
     }
 

@@ -116,6 +116,9 @@ public class ChartManager {
                 for (Integer datePointsIndex : datePointsIndexes) {
                     xAlphas[datePointsIndex] = 1;
                 }
+
+                chartView.setData(data);
+
                 recalculateXMargin();
                 animateZoom();
 
@@ -313,7 +316,7 @@ public class ChartManager {
     }
 
     private void updateAllChartValues() {
-        chartView.set(data, minY, maxY, leftBorder, rightBorder ,alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+        chartView.set(minY, maxY, leftBorder, rightBorder ,alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
     }
 
     private void calculatePreviewDrawData(List<Graph> graphs) {

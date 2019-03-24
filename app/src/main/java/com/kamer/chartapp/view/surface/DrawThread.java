@@ -56,19 +56,16 @@ public class DrawThread extends Thread {
         runFlag = run;
     }
 
-    /*public void setDrawData(GraphDrawData drawData) {
-        if (!drawData.equals(this.drawData)) {
-            this.drawData = drawData;
-            isDirty = true;
-        }
-    }*/
-
     public void setDirty() {
         isDirty = true;
     }
 
+    public void setData(Data data) {
+        this.data = data;
+        isDirty = true;
+    }
+
     public void set(
-            Data data,
             float minY,
             float maxY,
             float minX,
@@ -79,7 +76,6 @@ public class DrawThread extends Thread {
             float xMarginPercent,
             DrawSelection drawSelection
     ) {
-        this.data = data;
         this.minY = minY;
         this.maxY = maxY;
         this.minX = minX;
