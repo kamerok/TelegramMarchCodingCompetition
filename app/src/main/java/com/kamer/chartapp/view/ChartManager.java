@@ -338,8 +338,8 @@ public class ChartManager {
         for (Graph graph : data.getGraphs()) {
             Path path = scalePath(width, height, graph.getPath(), minY, maxY, leftBorder, rightBorder, PADDING_VERTICAL, xMarginPx);
 
-            float alpha1 = getAlpha(graph.getName());
-            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha1 * 255)));
+            float alpha = getAlpha(graph.getName());
+            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
         }
 
 
