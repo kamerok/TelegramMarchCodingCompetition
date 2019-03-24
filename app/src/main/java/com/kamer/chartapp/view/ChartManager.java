@@ -35,7 +35,8 @@ import java.util.Map;
 public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
-    private static final int PADDING_VERTICAL = 50;
+    private static final int PADDING_VERTICAL = (int) UnitConverter.dpToPx(32);
+    private static final int PADDING_TEXT_BOTTOM = (int) UnitConverter.dpToPx(8);
     private static final int PADDING_PREVIEW_VERTICAL = 15;
 
     private ChartView chartView;
@@ -387,7 +388,7 @@ public class ChartManager {
                 DatePoint datePoint = data.getDatePoints().get(i);
                 float xPercent = datePoint.getPercent();
                 int x = (int) (width * calcPercent(applyXMargin(xPercent), leftBorder, rightBorder));
-                xLabels.add(new DrawText(datePoint.getText(), x, height, (int) (xAlphas[i] * 255)));
+                xLabels.add(new DrawText(datePoint.getText(), x, height - PADDING_TEXT_BOTTOM, (int) (xAlphas[i] * 255)));
             }
         }
 
