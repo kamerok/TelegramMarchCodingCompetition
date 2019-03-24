@@ -96,30 +96,38 @@ public class ChartManager {
             @Override
             public void run() {
                 ChartManager.this.data = data;
+                leftBorder = 0.7f;
+                rightBorder = 1f;
+                pan = 0f;
+
+                xAlphas = new float[data.getDatePoints().size()];
+                alphas.clear();
+
                 float[] targetRange = calculateTargetRange(leftBorder, rightBorder, true);
                 minY = targetRange[0];
                 maxY = targetRange[1];
-                alphas.clear();
                 guideAlphas.clear();
                 guideAlphas.put(new YGuides(calculateYGuides(targetRange[0], targetRange[1]), true), 1f);
-
-                xAlphas = new float[data.getDatePoints().size()];
-
                 drawSelection = null;
                 datePointsIndexes.clear();
                 for (Integer datePointsIndex : datePointsIndexes) {
                     xAlphas[datePointsIndex] = 1;
                 }
-
-                chartView.setData(data);
-
                 recalculateXMargin();
-                animateZoom();
 
-                recalculateDates();
-                animateDates();
+                totalMaxY = calculateTargetRange(0, 1, false)[1];
 
-                sync();
+//                animateZoom();
+
+//                recalculateDates();
+//                animateDates();
+
+
+                //TODO: initial date and y values?
+                chartView.setData(data, minY, maxY, leftBorder, rightBorder, xAlphas, xMarginPercent);
+                previewMaskView.setBorders(leftBorder, rightBorder);
+                previewView.set(data.getGraphs(), totalMaxY, alphas);
+                syncGraphEnabledStatus();
             }
         });
     }
@@ -130,8 +138,8 @@ public class ChartManager {
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 drawSelection = null;
-                animateZoom();
-                sync();
+//                animateZoom();
+                syncGraphEnabledStatus();
                 return;
             }
         }
@@ -149,10 +157,10 @@ public class ChartManager {
             this.leftBorder = newLeft;
             drawSelection = null;
             recalculateXMargin();
-            animateZoom();
+//            animateZoom();
 
-            recalculateDates();
-            animateDates();
+//            recalculateDates();
+//            animateDates();
         }
     }
 
@@ -174,7 +182,7 @@ public class ChartManager {
             this.pan = newPan;
             drawSelection = null;
             recalculateXMargin();
-            animateZoom();
+//            animateZoom();
 
             recalculateDates();
             animateDates();
@@ -194,7 +202,7 @@ public class ChartManager {
             this.leftBorder += diff;
             this.rightBorder += diff;
             drawSelection = null;
-            animateZoom();
+//            animateZoom();
         }
     }
 
@@ -305,7 +313,7 @@ public class ChartManager {
         datePointsIndexes = indexes;
     }
 
-    private void sync() {
+    private void syncGraphEnabledStatus() {
         updateListener.onUpdate(data.getGraphs());
     }
 
@@ -354,55 +362,7 @@ public class ChartManager {
         return (value - start) / (end - start);
     }
 
-    private void animateDates() {
-        if (datesAnimation != null && datesAnimation.isRunning()) return;
-        float[] targetX = new float[xAlphas.length];
-        for (int i = 0; i < xAlphas.length; i++) {
-            targetX[i] = datePointsIndexes.contains(i) ? 1f : 0f;
-        }
-        List<Pair<Integer, Float>> toAnimate = new ArrayList<>();
-        for (int i = 0; i < targetX.length; i++) {
-            if (xAlphas[i] != targetX[i]) {
-                toAnimate.add(new Pair<>(i, targetX[i]));
-            }
-        }
-        if (toAnimate.isEmpty()) return;
-
-        PropertyValuesHolder[] properties = new PropertyValuesHolder[toAnimate.size()];
-        int i = 0;
-        for (Pair<Integer, Float> integerFloatPair : toAnimate) {
-            properties[i] = PropertyValuesHolder.ofFloat(integerFloatPair.first + "", xAlphas[integerFloatPair.first], integerFloatPair.second);
-            i++;
-        }
-        if (datesAnimation != null) {
-            datesAnimation.cancel();
-        }
-        ValueAnimator animator = new ValueAnimator();
-        animator.setValues(properties);
-        animator.setDuration(100);
-
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator valueAnimator) {
-                for (int i1 = 0; i1 < xAlphas.length; i1++) {
-                    if (valueAnimator.getAnimatedValue(i1 + "") != null) {
-                        xAlphas[i1] = (float) valueAnimator.getAnimatedValue(i1 + "");
-                    }
-                    updateAllChartValues();
-                }
-            }
-        });
-        animator.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                animateDates();
-            }
-        });
-        datesAnimation = animator;
-        animator.start();
-    }
-
-    private void animateZoom() {
+    /*private void animateZoom() {
         float[] targetRange = calculateTargetRange(leftBorder, rightBorder, false);
         float[] totalRange = calculateTargetRange(0f, 1f, false);
         List<Graph> graphs = data.getGraphs();
@@ -472,6 +432,54 @@ public class ChartManager {
             }
         });
         currentAnimation = animator;
+        animator.start();
+    }*/
+
+    private void animateDates() {
+        if (datesAnimation != null && datesAnimation.isRunning()) return;
+        float[] targetX = new float[xAlphas.length];
+        for (int i = 0; i < xAlphas.length; i++) {
+            targetX[i] = datePointsIndexes.contains(i) ? 1f : 0f;
+        }
+        List<Pair<Integer, Float>> toAnimate = new ArrayList<>();
+        for (int i = 0; i < targetX.length; i++) {
+            if (xAlphas[i] != targetX[i]) {
+                toAnimate.add(new Pair<>(i, targetX[i]));
+            }
+        }
+        if (toAnimate.isEmpty()) return;
+
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[toAnimate.size()];
+        int i = 0;
+        for (Pair<Integer, Float> integerFloatPair : toAnimate) {
+            properties[i] = PropertyValuesHolder.ofFloat(integerFloatPair.first + "", xAlphas[integerFloatPair.first], integerFloatPair.second);
+            i++;
+        }
+        if (datesAnimation != null) {
+            datesAnimation.cancel();
+        }
+        ValueAnimator animator = new ValueAnimator();
+        animator.setValues(properties);
+        animator.setDuration(100);
+
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                for (int i1 = 0; i1 < xAlphas.length; i1++) {
+                    if (valueAnimator.getAnimatedValue(i1 + "") != null) {
+                        xAlphas[i1] = (float) valueAnimator.getAnimatedValue(i1 + "");
+                    }
+                    updateAllChartValues();
+                }
+            }
+        });
+        animator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                animateDates();
+            }
+        });
+        datesAnimation = animator;
         animator.start();
     }
 

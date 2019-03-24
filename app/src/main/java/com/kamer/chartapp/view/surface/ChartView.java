@@ -10,13 +10,21 @@ import com.kamer.chartapp.view.data.Data;
 import com.kamer.chartapp.view.data.YGuides;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
 
     private DrawThread drawThread;
     private GraphDrawer drawer;
+
     private Data data;
+    private float minY;
+    private float maxY;
+    private float minX;
+    private float maxX;
+    private float[] xAlphas;
+    private float xMarginPercent;
 
     public ChartView(Context context) {
         super(context);
@@ -41,7 +49,7 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         drawThread = new DrawThread(drawer, getHolder());
-        drawThread.setData(data);
+        drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, xMarginPercent);
         drawThread.setRunning(true);
         drawThread.start();
     }
@@ -66,10 +74,16 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void setData(Data data) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, float xMarginPercent) {
         this.data = data;
+        this.minY = minY;
+        this.maxY = maxY;
+        this.minX = minX;
+        this.maxX = maxX;
+        this.xAlphas = xAlphas;
+        this.xMarginPercent = xMarginPercent;
         if (drawThread != null) {
-            drawThread.setData(data);
+            drawThread.setData(data, minY, maxY, minX, maxX, xAlphas, xMarginPercent);
         }
     }
 

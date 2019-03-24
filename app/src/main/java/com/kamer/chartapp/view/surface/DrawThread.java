@@ -60,8 +60,17 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
-    public void setData(Data data) {
+    public void setData(Data data, float minY, float maxY, float minX, float maxX, float[] xAlphas, float xMarginPercent) {
         this.data = data;
+        this.minY = minY;
+        this.maxY = maxY;
+        this.minX = minX;
+        this.maxX = maxX;
+        this.alphas = new HashMap<>();
+        this.guideAlphas = new HashMap<>();
+        this.xAlphas = xAlphas;
+        this.xMarginPercent = xMarginPercent;
+        this.drawSelection = null;
         isDirty = true;
     }
 
