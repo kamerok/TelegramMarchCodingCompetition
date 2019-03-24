@@ -79,11 +79,19 @@ public class DrawThread extends Thread {
         isDirty = true;
     }
 
+    public void setMinX(float minX) {
+        this.minX = minX;
+        isDirty = true;
+    }
+
+    public void setMaxX(float maxX) {
+        this.maxX = maxX;
+        isDirty = true;
+    }
+
     public void set(
             float minY,
             float maxY,
-            float minX,
-            float maxX,
             Map<YGuides, Float> guideAlphas,
             float[] xAlphas,
             float xMarginPercent,
@@ -91,8 +99,6 @@ public class DrawThread extends Thread {
     ) {
         this.minY = minY;
         this.maxY = maxY;
-        this.minX = minX;
-        this.maxX = maxX;
         this.guideAlphas = guideAlphas;
         this.xAlphas = xAlphas;
         this.xMarginPercent = xMarginPercent;
@@ -109,7 +115,7 @@ public class DrawThread extends Thread {
                     canvas = null;
                     try {
                         canvas = surfaceHolder.lockCanvas(null);
-                        if (canvas != null) {
+                        if (canvas != null && data != null) {
                             GraphDrawData drawData = calculateDrawData(canvas.getWidth(), canvas.getHeight());
                             drawer.render(canvas, drawData);
                             isDirty = false;

@@ -161,11 +161,8 @@ public class ChartManager {
         if (this.leftBorder != newLeft) {
             this.leftBorder = newLeft;
             drawSelection = null;
-            recalculateXMargin();
-//            animateZoom();
-
-//            recalculateDates();
-//            animateDates();
+            onUpdateMinX();
+            onUpdateZoom();
         }
     }
 
@@ -186,11 +183,8 @@ public class ChartManager {
             this.rightBorder = newRight;
             this.pan = newPan;
             drawSelection = null;
-            recalculateXMargin();
-//            animateZoom();
-
-            recalculateDates();
-            animateDates();
+            onUpdateMaxX();
+            onUpdateZoom();
         }
     }
 
@@ -207,7 +201,8 @@ public class ChartManager {
             this.leftBorder += diff;
             this.rightBorder += diff;
             drawSelection = null;
-//            animateZoom();
+            onUpdateMinX();
+            onUpdateMaxX();
         }
     }
 
@@ -272,6 +267,20 @@ public class ChartManager {
         updateAllChartValues();
     }
 
+    private void onUpdateMinX() {
+        chartView.setMinX(leftBorder);
+        previewMaskView.setBorders(leftBorder, rightBorder);
+    }
+
+    private void onUpdateMaxX() {
+        chartView.setMaxX(rightBorder);
+        previewMaskView.setBorders(leftBorder, rightBorder);
+    }
+
+    private void onUpdateZoom() {
+        recalculateXMargin();
+    }
+
     private boolean isIndexFit(int index) {
         if (index >= data.getDatePoints().size()) return false;
         float dateSize = 0.13f * visiblePartSize();
@@ -323,7 +332,7 @@ public class ChartManager {
     }
 
     private void updateAllChartValues() {
-        chartView.set(minY, maxY, leftBorder, rightBorder, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+        chartView.set(minY, maxY, guideAlphas, xAlphas, xMarginPercent, drawSelection);
     }
 
     private void updateAllPreviewValues() {
