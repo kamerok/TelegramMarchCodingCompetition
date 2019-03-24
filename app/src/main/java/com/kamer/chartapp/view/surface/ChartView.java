@@ -6,7 +6,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.kamer.chartapp.view.GraphDrawer;
-import com.kamer.chartapp.view.data.draw.GraphDrawData;
+import com.kamer.chartapp.view.data.Data;
+import com.kamer.chartapp.view.data.YGuides;
+import com.kamer.chartapp.view.data.draw.DrawSelection;
+
+import java.util.Map;
 
 public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
 
@@ -53,16 +57,33 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
-    public void setDrawData(GraphDrawData drawData) {
+    /*public void setDrawData(GraphDrawData drawData) {
         if (drawThread != null) {
             drawThread.setDrawData(drawData);
         }
-    }
+    }*/
 
     public void setColors(int popupColor, int popupTextColor, int shadowColor, int guideColor, int guideTextColor, int backgroundColor) {
         drawer.setColors(popupColor, popupTextColor, shadowColor, guideColor, guideTextColor, backgroundColor);
         if (drawThread != null) {
             drawThread.setDirty();
+        }
+    }
+
+    public void set(
+            Data data,
+            float minY,
+            float maxY,
+            float minX,
+            float maxX,
+            Map<String, Float> alphas,
+            Map<YGuides, Float> guideAlphas,
+            float[] xAlphas,
+            float xMarginPercent,
+            DrawSelection drawSelection
+    ) {
+        if (drawThread != null) {
+            drawThread.set(data, minY, maxY, minX, maxX, alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
         }
     }
 

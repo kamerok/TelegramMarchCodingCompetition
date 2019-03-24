@@ -5,9 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.graphics.Matrix;
 import android.graphics.Path;
-import android.graphics.RectF;
 import android.util.Pair;
 import android.view.MotionEvent;
 import android.view.View;
@@ -21,12 +19,10 @@ import com.kamer.chartapp.view.data.draw.DrawGraph;
 import com.kamer.chartapp.view.data.draw.DrawSelection;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPoint;
 import com.kamer.chartapp.view.data.draw.DrawSelectionPopup;
-import com.kamer.chartapp.view.data.draw.DrawText;
-import com.kamer.chartapp.view.data.draw.DrawYGuides;
-import com.kamer.chartapp.view.data.draw.GraphDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewDrawData;
 import com.kamer.chartapp.view.data.draw.PreviewMaskDrawData;
 import com.kamer.chartapp.view.surface.ChartView;
+import com.kamer.chartapp.view.utils.DrawUtils;
 import com.kamer.chartapp.view.utils.UnitConverter;
 
 import java.util.ArrayList;
@@ -38,7 +34,6 @@ public class ChartManager {
 
     private static final float MIN_VISIBLE_PART = 0.2f;
     private static final float PADDING_VERTICAL = UnitConverter.dpToPx(32);
-    private static final int PADDING_TEXT_BOTTOM = (int) UnitConverter.dpToPx(8);
     private static final int PADDING_PREVIEW_VERTICAL = 15;
 
     private ChartView chartView;
@@ -122,7 +117,6 @@ public class ChartManager {
                     xAlphas[datePointsIndex] = 1;
                 }
                 recalculateXMargin();
-//                updateHorizontalPosition();
                 animateZoom();
 
                 recalculateDates();
@@ -159,7 +153,6 @@ public class ChartManager {
             drawSelection = null;
             recalculateXMargin();
             animateZoom();
-//            updateHorizontalPosition();
 
             recalculateDates();
             animateDates();
@@ -185,7 +178,6 @@ public class ChartManager {
             drawSelection = null;
             recalculateXMargin();
             animateZoom();
-//            updateHorizontalPosition();
 
             recalculateDates();
             animateDates();
@@ -206,15 +198,7 @@ public class ChartManager {
             this.rightBorder += diff;
             drawSelection = null;
             animateZoom();
-//            updateHorizontalPosition();
         }
-    }
-
-    private void updateHorizontalPosition() {
-        calculateDrawData();
-        calculatePreviewDrawData(data.getGraphs());
-        previewMaskView.invalidate();
-        previewView.invalidate();
     }
 
     private void updateSelection(float x) {
@@ -275,7 +259,7 @@ public class ChartManager {
         );
         drawSelection = new DrawSelection(realX, points, popup);
 
-        calculateDrawData();
+        updateAllChartValues();
     }
 
     private boolean isIndexFit(int index) {
@@ -328,53 +312,8 @@ public class ChartManager {
         updateListener.onUpdate(data.getGraphs());
     }
 
-    private void calculateDrawData() {
-        ArrayList<DrawGraph> result = new ArrayList<>();
-
-
-        int width = chartView.getWidth();
-        int height = chartView.getHeight();
-
-        for (Graph graph : data.getGraphs()) {
-            Path path = scalePath(width, height, graph.getPath(), minY, maxY, leftBorder, rightBorder, PADDING_VERTICAL, xMarginPx);
-
-            float alpha = getAlpha(graph.getName());
-            result.add(new DrawGraph(graph.getColor(), path, (int) (alpha * 255)));
-        }
-
-
-        //TODO: move it somewhere
-        List<DrawYGuides> drawYGuides = new ArrayList<>();
-        for (Map.Entry<YGuides, Float> yGuidesFloatEntry : guideAlphas.entrySet()) {
-            YGuides guide = yGuidesFloatEntry.getKey();
-            float[] yLines = new float[guide.getPercent().length * 4];
-            List<DrawText> drawTexts = new ArrayList<>();
-            int alpha = (int) (yGuidesFloatEntry.getValue() * 255);
-            for (int i = 0; i < guide.getPercent().length; i++) {
-                float y = calculateYFromPercent(chartView.getHeight(), guide.getPercent()[i], minY, maxY, PADDING_VERTICAL);
-                yLines[i * 4] = UnitConverter.dpToPx(16);
-                yLines[i * 4 + 1] = y;
-                yLines[i * 4 + 2] = chartView.getWidth() - UnitConverter.dpToPx(16);
-                yLines[i * 4 + 3] = y;
-
-                int value = Math.round((data.getMaxValue() - data.getMinValue()) * guide.getPercent()[i] + data.getMinValue());
-                String text = value + "";
-                drawTexts.add(new DrawText(text, UnitConverter.dpToPx(16), y - UnitConverter.dpToPx(8), alpha));
-            }
-            drawYGuides.add(new DrawYGuides(yLines, drawTexts, alpha));
-        }
-
-        ArrayList<DrawText> xLabels = new ArrayList<>();
-        for (int i = 0; i < xAlphas.length; i++) {
-            if (xAlphas[i] > 0) {
-                DatePoint datePoint = data.getDatePoints().get(i);
-                float xPercent = datePoint.getPercent();
-                int x = (int) (width * calcPercent(applyXMargin(xPercent), leftBorder, rightBorder));
-                xLabels.add(new DrawText(datePoint.getText(), x, height - PADDING_TEXT_BOTTOM, (int) (xAlphas[i] * 255)));
-            }
-        }
-
-        chartView.setDrawData(new GraphDrawData(result, drawYGuides, xLabels, drawSelection));
+    private void updateAllChartValues() {
+        chartView.set(data, minY, maxY, leftBorder, rightBorder ,alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
     }
 
     private void calculatePreviewDrawData(List<Graph> graphs) {
@@ -383,7 +322,7 @@ public class ChartManager {
         int height = previewView.getHeight();
 
         for (Graph graph : graphs) {
-            Path path = scalePath(width, height, graph.getPath(), 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL, 0);
+            Path path = DrawUtils.scalePath(width, height, graph.getPath(), 0, totalMaxY, 0, 1, PADDING_PREVIEW_VERTICAL, 0);
 
             float alpha = getAlpha(graph.getName());
             result.add(new DrawGraph(graph.getColor(), path, ((int) (255 * alpha))));
@@ -394,35 +333,6 @@ public class ChartManager {
                 previewMaskView.getWidth() * leftBorder,
                 previewMaskView.getWidth() * rightBorder
         ));
-    }
-
-    private Path scalePath(int width, int height, Path path, float minY, float maxY, float minX, float maxX, float paddingVertical, float paddingHorizontal) {
-
-        float scaledWidth = width * 1f / (maxX - minX);
-        float scaledHeight = (height - paddingVertical * 2) * (1f / (maxY - minY));
-
-        Path result = new Path(path);
-
-        //scale
-        Matrix scale = new Matrix();
-        scale.setScale(scaledWidth, -scaledHeight);
-        result.transform(scale);
-
-        //move
-        float moveX = -minX * scaledWidth;
-        float moveY = scaledHeight - (1 - maxY) * scaledHeight + paddingVertical;
-        result.offset(moveX, moveY);
-
-        //x insets
-        Matrix inset = new Matrix();
-        RectF bounds = new RectF();
-        result.computeBounds(bounds, true);
-        RectF boundsWithInsets = new RectF(bounds);
-        boundsWithInsets.inset(paddingHorizontal, 0);
-        inset.setRectToRect(bounds, boundsWithInsets, Matrix.ScaleToFit.FILL);
-        result.transform(inset);
-
-        return result;
     }
 
     private float[] calculateYGuides(float minY, float maxY) {
@@ -495,7 +405,7 @@ public class ChartManager {
                     if (valueAnimator.getAnimatedValue(i1 + "") != null) {
                         xAlphas[i1] = (float) valueAnimator.getAnimatedValue(i1 + "");
                     }
-                    calculateDrawData();
+                    updateAllChartValues();
                 }
             }
         });
@@ -574,7 +484,7 @@ public class ChartManager {
                 totalMaxY = newTotalMax;
 
                 alphas = newAlphas;
-                calculateDrawData();
+                updateAllChartValues();
 
                 calculatePreviewDrawData(data.getGraphs());
                 previewView.invalidate();
