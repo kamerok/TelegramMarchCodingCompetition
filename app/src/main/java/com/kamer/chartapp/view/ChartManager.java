@@ -102,7 +102,7 @@ public class ChartManager {
                         verticalZoomAnimator.getGuideAlphas()
                 );
                 previewMaskView.setBorders(leftBorder, rightBorder);
-                previewView.setData(data.getGraphs(), verticalZoomAnimator.getTotalMaxY());
+                previewView.setData(data, verticalZoomAnimator.getTotalMaxY());
                 syncGraphEnabledStatus();
             }
         });
