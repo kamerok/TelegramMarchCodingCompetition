@@ -41,8 +41,10 @@ public class ChartManager {
     private float rightBorder = 1f;
     private float pan = 0f;
 
+    private Map<String, Float> graphAlphas = new HashMap<>();
+    private ValueAnimator graphAlphaAnimation;
+
     private float[] xAlphas = new float[0];
-    private Map<String, Float> alphas = new HashMap<>();
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float minY;
     private float maxY = 1;
@@ -101,7 +103,7 @@ public class ChartManager {
                 pan = 0f;
 
                 xAlphas = new float[data.getDatePoints().size()];
-                alphas.clear();
+                graphAlphas.clear();
 
                 float[] targetRange = calculateTargetRange(leftBorder, rightBorder, true);
                 minY = targetRange[0];
@@ -126,7 +128,7 @@ public class ChartManager {
                 //TODO: initial date and y values?
                 chartView.setData(data, minY, maxY, leftBorder, rightBorder, xAlphas, xMarginPercent);
                 previewMaskView.setBorders(leftBorder, rightBorder);
-                previewView.set(data.getGraphs(), totalMaxY, alphas);
+                previewView.setData(data.getGraphs(), totalMaxY);
                 syncGraphEnabledStatus();
             }
         });
@@ -138,7 +140,7 @@ public class ChartManager {
             if (graph.getName().equals(name)) {
                 data.getGraphs().set(i, new Graph(graph.getName(), graph.getColor(), graph.getItems(), graph.getPath(), isEnabled));
                 drawSelection = null;
-//                animateZoom();
+                animateGraphAlphas();
                 syncGraphEnabledStatus();
                 return;
             }
@@ -318,11 +320,11 @@ public class ChartManager {
     }
 
     private void updateAllChartValues() {
-        chartView.set(minY, maxY, leftBorder, rightBorder ,alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+        chartView.set(minY, maxY, leftBorder, rightBorder, guideAlphas, xAlphas, xMarginPercent, drawSelection);
     }
 
     private void updateAllPreviewValues() {
-        previewView.set(data.getGraphs(), totalMaxY, alphas);
+        previewView.set(totalMaxY);
         previewMaskView.setBorders(leftBorder, rightBorder);
     }
 
@@ -483,6 +485,39 @@ public class ChartManager {
         animator.start();
     }
 
+    private void animateGraphAlphas() {
+        List<Graph> graphs = data.getGraphs();
+        PropertyValuesHolder[] properties = new PropertyValuesHolder[graphs.size()];
+        for (int i = 0; i < graphs.size(); i++) {
+            Graph graph = graphs.get(i);
+            String name = graph.getName();
+            properties[i] = PropertyValuesHolder.ofFloat(name, getGraphAlpha(name), graph.isEnabled() ? 1f : 0f);
+        }
+        if (graphAlphaAnimation != null) {
+            graphAlphaAnimation.cancel();
+        }
+        ValueAnimator animator = new ValueAnimator();
+        animator.setValues(properties);
+        animator.setDuration(100);
+
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                HashMap<String, Float> newAlphas = new HashMap<>();
+                for (Graph graph : data.getGraphs()) {
+                    Object animatedValue = valueAnimator.getAnimatedValue(graph.getName());
+                    float alpha = animatedValue != null ? (float) animatedValue : 1f;
+                    newAlphas.put(graph.getName(), alpha);
+                }
+                graphAlphas = newAlphas;
+                previewView.setAlphas(newAlphas);
+                chartView.setGraphAlphas(newAlphas);
+            }
+        });
+        graphAlphaAnimation = animator;
+        animator.start();
+    }
+
     private float[] calculateTargetRange(float startXPercentage, float endXPercentage, boolean withMargin) {
         float yMin = 1;
         float yMax = 0;
@@ -537,8 +572,8 @@ public class ChartManager {
         return new float[]{yMin, yMax};
     }
 
-    private float getAlpha(String name) {
-        Float animatedAlpha = alphas.get(name);
+    private float getGraphAlpha(String name) {
+        Float animatedAlpha = graphAlphas.get(name);
         return animatedAlpha != null ? animatedAlpha : 1f;
     }
 

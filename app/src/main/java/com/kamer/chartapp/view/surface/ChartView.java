@@ -87,19 +87,24 @@ public class ChartView extends SurfaceView implements SurfaceHolder.Callback {
         }
     }
 
+    public void setGraphAlphas(HashMap<String, Float> graphAlphas) {
+        if (drawThread != null) {
+            drawThread.setGraphAlphas(graphAlphas);
+        }
+    }
+
     public void set(
             float minY,
             float maxY,
             float minX,
             float maxX,
-            Map<String, Float> alphas,
             Map<YGuides, Float> guideAlphas,
             float[] xAlphas,
             float xMarginPercent,
             DrawSelection drawSelection
     ) {
         if (drawThread != null) {
-            drawThread.set(minY, maxY, minX, maxX, alphas, guideAlphas, xAlphas, xMarginPercent, drawSelection);
+            drawThread.set(minY, maxY, minX, maxX, guideAlphas, xAlphas, xMarginPercent, drawSelection);
         }
     }
 

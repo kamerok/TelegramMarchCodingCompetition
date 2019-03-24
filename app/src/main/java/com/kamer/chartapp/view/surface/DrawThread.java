@@ -41,7 +41,7 @@ public class DrawThread extends Thread {
     private float maxY;
     private float minX;
     private float maxX;
-    private Map<String, Float> alphas = new HashMap<>();
+    private Map<String, Float> graphAlphas = new HashMap<>();
     private Map<YGuides, Float> guideAlphas = new HashMap<>();
     private float[] xAlphas = new float[0];
     private float xMarginPercent;
@@ -66,11 +66,16 @@ public class DrawThread extends Thread {
         this.maxY = maxY;
         this.minX = minX;
         this.maxX = maxX;
-        this.alphas = new HashMap<>();
+        this.graphAlphas = new HashMap<>();
         this.guideAlphas = new HashMap<>();
         this.xAlphas = xAlphas;
         this.xMarginPercent = xMarginPercent;
         this.drawSelection = null;
+        isDirty = true;
+    }
+
+    public void setGraphAlphas(HashMap<String, Float> graphAlphas) {
+        this.graphAlphas = graphAlphas;
         isDirty = true;
     }
 
@@ -79,7 +84,6 @@ public class DrawThread extends Thread {
             float maxY,
             float minX,
             float maxX,
-            Map<String, Float> alphas,
             Map<YGuides, Float> guideAlphas,
             float[] xAlphas,
             float xMarginPercent,
@@ -89,7 +93,6 @@ public class DrawThread extends Thread {
         this.maxY = maxY;
         this.minX = minX;
         this.maxX = maxX;
-        this.alphas = alphas;
         this.guideAlphas = guideAlphas;
         this.xAlphas = xAlphas;
         this.xMarginPercent = xMarginPercent;
@@ -167,7 +170,7 @@ public class DrawThread extends Thread {
     }
 
     private float getAlpha(String name) {
-        Float animatedAlpha = alphas.get(name);
+        Float animatedAlpha = graphAlphas.get(name);
         return animatedAlpha != null ? animatedAlpha : 1f;
     }
 

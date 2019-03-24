@@ -61,9 +61,21 @@ public class PreviewView extends View {
         }
     }
 
-    public void set(List<Graph> graphs, float max, Map<String, Float> alphas) {
+    public void setData(List<Graph> graphs, float max) {
         this.graphs = graphs;
         this.max = max;
+        this.alphas = new HashMap<>();
+        drawData = calculatePreviewDrawData();
+        invalidate();
+    }
+
+    public void set(float max) {
+        this.max = max;
+        drawData = calculatePreviewDrawData();
+        invalidate();
+    }
+
+    public void setAlphas(Map<String, Float> alphas) {
         this.alphas = alphas;
         drawData = calculatePreviewDrawData();
         invalidate();
