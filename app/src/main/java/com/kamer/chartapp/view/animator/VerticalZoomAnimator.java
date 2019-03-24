@@ -2,6 +2,7 @@ package com.kamer.chartapp.view.animator;
 
 import android.animation.PropertyValuesHolder;
 import android.animation.ValueAnimator;
+import android.view.animation.LinearInterpolator;
 
 import com.kamer.chartapp.view.Constants;
 import com.kamer.chartapp.view.PreviewView;
@@ -103,6 +104,7 @@ public class VerticalZoomAnimator {
         }
         ValueAnimator animator = new ValueAnimator();
         animator.setValues(properties);
+        animator.setInterpolator(new LinearInterpolator());
         animator.setDuration(100);
 
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -121,10 +123,12 @@ public class VerticalZoomAnimator {
                 }
                 minY = newMin;
                 maxY = newMax;
-                totalMaxY = newTotalMax;
-
-                previewView.setMax(newTotalMax);
                 chartView.set(minY, maxY, new HashMap<>(guideAlphas));
+
+                if (newTotalMax != totalMaxY) {
+                    totalMaxY = newTotalMax;
+                    previewView.setMax(newTotalMax);
+                }
             }
         });
         currentAnimation = animator;
